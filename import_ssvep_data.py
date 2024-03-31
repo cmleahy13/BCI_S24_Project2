@@ -13,7 +13,7 @@ Useful abbreviations:
     fs: sampling frequency
     FFT: Fast Fourier Transform
 
-@authors: Peijin Chen and Claire Leahy ***UPDATED BY RON BRYANT AND CLAIRE LEAHY***
+@authors: Peijin Chen and Claire Leahy ***UPDATED (1) BY RON BRYANT AND CLAIRE LEAHY*** ***UPDATED (2) BY LUTE LILLO AND CLAIRE LEAHY***
 
 Sources:
 
@@ -36,6 +36,9 @@ def load_ssvep_data(subject, data_directory):
     Description
     -----------
     Function to load in the SSVEP data from Python's MNE dataset as a dictionary.
+    
+    ***UPDATES (2)***
+    Removed printing of data features.
 
     Parameters
     ----------
@@ -56,11 +59,6 @@ def load_ssvep_data(subject, data_directory):
     
     # explicitly convert from existing data type to dict to avoid potential complications
     data_dict = {'eeg': data['eeg'], 'channels': data['channels'], 'fs': data['fs'], 'event_samples': data['event_samples'], 'event_durations': data['event_durations'], 'event_types': data['event_types']}
-    
-    # printing to inform user of some data features
-    print(f'Data keys: {list(data_dict.keys())}') # list conversion prevents printing data type, adapted from blog.finxter.com (list cast)
-    print('\nChannels: ', data['channels'])
-    print('\nSampling frequency (Hz):', data['fs'], '\n')
     
     # return data dictionary
     return data_dict
@@ -167,14 +165,16 @@ def plot_raw_data(data, subject, channels_to_plot):
 
 #%% Part 3: Extract the Epochs
 
-def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=None):
+def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=None, stimulus_frequency='15hz'):
     """
     Description
     -----------
     Function that takes in the data dictionary as well as relative start and end times for a given epoch to organize the EEG data by channel and event type.
     
-    ***UPDATES***
+    ***UPDATES (1)***
     Optional input of eeg_data added (default is None). EEG data has been converted to microvolts where applicable. epoch_times has been corrected (no longer uses linspace).
+    ***UPDATES (2)***
+    Optional input of stimulus_frequency added (default is '15Hz'). This will take away the hard-coded comparison for stimuli frequencies. Renamed is_trial_15Hz variable to truth_labels to represent the greater flexibility the variable now exhibits.
 
     Parameters
     ----------
@@ -188,6 +188,8 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
         The relative time in seconds at which the epoch ends. The default is 20.
     eeg_data : array of floats, size CxS, where C is the number of channels and S is the number of samples, optional
         An explicit entry of the EEG data that will be epoched. The default is None.
+    stimulus_frequency: str, optional
+        The frequency to which the trials will be compared. The default is '15hz'.
 
     Returns
     -------
@@ -195,7 +197,7 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
         Array containing the EEG data in volts from each of the electrode channels organized by periods of time in which an event (12Hz or 15Hz flashes) occurs.
     epoch_times : array of floats, size Sx1, where S is the number of samples within each epoch
         Array containing the relative times in seconds of each sample within an epoch.
-    is_trial_15Hz : array of boolean, size Ex1, where E is the number of epochs (or events)
+    truth_labels : array of boolean, size Ex1, where E is the number of epochs (or events)
         Array containing True if the epoch is an event at 15Hz, False if the epoch is an event at 12Hz.
 
     """
@@ -225,9 +227,9 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     epoch_times = np.arange(epoch_start_time, epoch_end_time, 1/fs)
     
     # create boolean array containing True if the event is a 15Hz sample, False if 12Hz
-    is_trial_15Hz = np.array([True if event == '15hz' else False for event in event_types])
+    truth_labels = np.array([True if event == stimulus_frequency else False for event in event_types])
     
-    return eeg_epochs, epoch_times, is_trial_15Hz
+    return eeg_epochs, epoch_times, truth_labels
 
 #%% Part 4: Take the Fourier Transform
 
@@ -269,7 +271,7 @@ def plot_power_spectrum(eeg_epochs_fft, fft_frequencies, is_trial_15Hz, channels
     -----------
     Function that uses the Fourier Transform of the epoched EEG data to compute and plot the power spectra of different electrodes.
     
-    ***UPDATES***
+    ***UPDATES (1)***
     Optional input of is_plotting added (default is True) that gives the user the option to suppress the plot when generating the power spectra. Optional inputs of event_15_normalization_factor and event_12_normalization_factor added (defaults are None) that give the user the option to normalize the epoched data to a different dataset. event_15_normalization_factor and event_12_normalization_factor are also outputs and give the factors to which the data were normalized (which may or may not contain the maximum mean powers for the dataset of interest depending on the input).
 
     Parameters
@@ -280,7 +282,7 @@ def plot_power_spectrum(eeg_epochs_fft, fft_frequencies, is_trial_15Hz, channels
         Array containing sample frequencies.
     is_trial_15Hz : array of boolean, size Ex1, where E is the number of epochs (or events)
         Array containing True if the epoch is an event at 15Hz, False if the epoch is an event at 12Hz.
-    channels : array of str, size Cx1, where C is the number of channels in the dataset (32)
+    channels : array of str, size Cx1, where C is the number of channels in the dataset
         Array containing strings with the name of each electrode/channel in the dataset.
     channels_to_plot : list, size Cx1, where C is the number of channels to be plotted
         Input containing which channels will be plotted.
