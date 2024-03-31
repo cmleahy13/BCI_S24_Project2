@@ -243,7 +243,6 @@ def plot_ssvep_amplitudes(data, envelope_a, envelope_b, channel_to_plot, ssvep_f
     event_samples = data['event_samples']
     event_types = data['event_types']
     
-    
     # time parameters
     T = envelope_a.shape[1]/fs # total time, same for envelope_b
     t = np.arange(0,T,1/fs) # time axis

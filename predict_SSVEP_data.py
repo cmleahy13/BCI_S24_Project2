@@ -9,7 +9,7 @@ Created on Thu Mar 28 19:35:53 2024
 # import packages
 import numpy as np
 from matplotlib import pyplot as plt
-from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
+from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_power_spectrum
 
 #%% Part A: Generate Predictions
 
@@ -46,10 +46,18 @@ def generate_fft_predictions(data, channel, epoch_start_time=0, epoch_end_time=2
     
     # predict: compare FFT data for the two stimuli
     eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)
+    # calculate power spectrum - alter function in import_ssvep_data
+    # do we go as far as comparing the envelopes?
     
-    # compare predicted labels to truth labels
+    # compare predicted labels to truth labels for each epoch
+    predicted_labels = np.zeros(truth_labels.shape) # declare empty array to contain predictions
+    #for label_index in range(len(predicted_labels)):
+        # if stim15-stim12 > 0:
+            # predicted_labels[label_index] = True
+        # else:
+            # predicted_labels[label_index] = False
     
-    return 
+    return predicted_labels, truth_labels
 
 #%% Part B: Calculate Accuracy and ITR
 
@@ -58,6 +66,28 @@ def generate_fft_predictions(data, channel, epoch_start_time=0, epoch_end_time=2
     - With true and predicted labels, and epoch timing info, calculate accuracy and ITR (bits/second)
 
 """
+
+def calculate_figures_of_merit(data, predicted_labels, truth_labels, epoch_start_time=0, epoch_end_time=20, classes_count=2):
+    
+    # get timing parameters
+    trials_per_second = data['fs'] # sampling frequency
+    # this should probably be related to epoch timing info - would it make more sense to bring in epoch_times, or are these arguments enough?
+    
+    # calculate accuracy
+    accuracy = 0
+    
+    # accuracy = TP + TN/(TP+TN+FP+FN)
+    # TP: predicted and truth both True (i.e. 15Hz)
+    # TN: predicted and truth both False
+    # FP: predicted True, truth False
+    # FN: predicted False, truth True
+    
+    # calculate ITR
+    ITR_trial = np.log2(classes_count) + accuracy*np.log2(accuracy) + (1-accuracy)*np.log2((1-accuracy)/(classes_count-1)) # bits/epoch
+    
+    ITR_time = ITR_trial * trials_per_second # bits/second
+    
+    return accuracy, ITR_time
 
 #%% Part C: Loop Through Epoch Limits
 
