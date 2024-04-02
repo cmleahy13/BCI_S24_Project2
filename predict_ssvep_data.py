@@ -102,6 +102,7 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
             - epoch start and end times affect this variable
             - ITR_trial does look like it matches up with graphic in class for 2 classes
         - double check that trials_per_second should be fs
+        - building off of part A - if it is decided that multiple channels can be evaluated, should we change it so that it's assumed that that is accounted for here as well?
         - Docstrings
 
 """
@@ -110,7 +111,7 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
     
     # get timing parameters
     trials_per_second = data['fs'] # sampling frequency
-    epoch_count = len(truth_labels) # same as predicted_labels - is this what is meant by "epoch timing info"?
+    epoch_count = len(truth_labels) # same as predicted_labels
     
     # assign counters for confusion matrix values
     TP = 0 # true positive initial count
