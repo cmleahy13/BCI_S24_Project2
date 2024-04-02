@@ -25,7 +25,7 @@ from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_pow
 
 """
 
-def generate_fft_predictions(data, channel, epoch_start_time=0, epoch_end_time=20, stimulus_frequencies=['15hz','12Hz']):
+def generate_fft_predictions(data, channel, epoch_start_time=0, epoch_end_time=20):
     
     # extract data
     eeg = data['eeg']*10**6 # convert to µV
@@ -35,8 +35,11 @@ def generate_fft_predictions(data, channel, epoch_start_time=0, epoch_end_time=2
     event_samples = data['event_samples']
     event_types = data['event_types']
     
-    # isolate the stimulus frequency that serves as True
-    stimulus_frequency = stimulus_frequencies[0]
+    # get the stimulus frequencies (sorted low to high)
+    stimulus_frequencies = np.unique(event_types)
+    
+    # isolate frequency that serves as True (index 1 is the higher frequency)
+    stimulus_frequency = stimulus_frequencies[1]
     
     # epoch the data give the channel of interest, start/end times
     eeg_epochs, epoch_times, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time, stimulus_frequency)
@@ -67,11 +70,11 @@ def generate_fft_predictions(data, channel, epoch_start_time=0, epoch_end_time=2
 
 """
 
-def calculate_figures_of_merit(data, predicted_labels, truth_labels, epoch_start_time=0, epoch_end_time=20, classes_count=2):
+def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_count=2):
     
     # get timing parameters
     trials_per_second = data['fs'] # sampling frequency
-    # this should probably be related to epoch timing info - would it make more sense to bring in epoch_times, or are these arguments enough?
+    epoch_count = len(truth_labels) # same as predicted_labels - is this what is meant by "epoch timing info"?
     
     # calculate accuracy
     accuracy = 0
@@ -81,6 +84,12 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, epoch_start
     # TN: predicted and truth both False
     # FP: predicted True, truth False
     # FN: predicted False, truth True
+    
+    for epoch_index in range(epoch_count):
+        
+        # true positives
+        if predicted_labels[epoch_index] == truth_labels[epoch_index]:
+            TP+=1
     
     # calculate ITR
     ITR_trial = np.log2(classes_count) + accuracy*np.log2(accuracy) + (1-accuracy)*np.log2((1-accuracy)/(classes_count-1)) # bits/epoch
