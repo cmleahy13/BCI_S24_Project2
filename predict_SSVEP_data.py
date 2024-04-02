@@ -29,12 +29,14 @@ from filter_ssvep_data import get_envelope, make_bandpass_filter, filter_data
 def generate_fft_predictions(data, channel_electrode, epoch_start_time=0, epoch_end_time=20):
     
     # extract data
-    eeg = data['eeg']*10**6 # convert to µV
-    channels = list(data['channels']) # convert to list
     fs = data['fs']
-    event_durations = data['event_durations']
-    event_samples = data['event_samples']
     event_types = data['event_types']
+    
+    # eeg_epochs, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time,
+    #                                                     stimulus_frequency=high_stimulus_frequency)
+    # eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)  
+    
+
     
     # Get the stimulus frequencies (sorted low to high)
     stimulus_frequencies = np.unique(event_types) # Shape (2,)
@@ -43,32 +45,31 @@ def generate_fft_predictions(data, channel_electrode, epoch_start_time=0, epoch_
     high_stimulus_frequency = stimulus_frequencies[-1]
     high_stimulus_frequency_int = int(high_stimulus_frequency[:2])
     
-    low_stimulus_frequency = stimulus_frequencies[0]
-    low_stimulus_frequency_int = int(low_stimulus_frequency[:2])
+    # low_stimulus_frequency = stimulus_frequencies[0]
+    # low_stimulus_frequency_int = int(low_stimulus_frequency[:2])
     
     # Get the filter coeff
     filter_coeff_high = make_bandpass_filter(high_stimulus_frequency_int-1, high_stimulus_frequency_int+1, filter_order=1000, fs=1000)
-    filter_coeff_low = make_bandpass_filter(low_stimulus_frequency_int-1, low_stimulus_frequency_int+1, filter_order=1000, fs=1000)
+    # filter_coeff_low = make_bandpass_filter(low_stimulus_frequency_int-1, low_stimulus_frequency_int+1, filter_order=1000, fs=1000)
     
     # Get the filtered data for each of the filter coefficients
     filtered_data_high = filter_data(data, filter_coeff_high)
-    filtered_data_low = filter_data(data, filter_coeff_low)
+    # filtered_data_low = filter_data(data, filter_coeff_low)
     
     # Get predictor based on amplitude of oscillations and epoch the data give the channel of interest, start/end times
-    envelope_high = get_envelope(data, filtered_data_high, channel_to_plot=channel_electrode)
-    eeg_epochs_high, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time,
-                                                        eeg_data=envelope_high, stimulus_frequency=high_stimulus_frequency)
-    eeg_epochs_fft_high, fft_frequencies = get_frequency_spectrum(eeg_epochs_high, fs)  
+    envelope_high = get_envelope(filtered_data_high, channel_to_plot=channel_electrode)
+    eeg_epochs, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time,
+                                                   eeg_data=envelope_high, stimulus_frequency=high_stimulus_frequency)
+    eeg_epochs_fft, _ = get_frequency_spectrum(eeg_epochs, fs)  
+    spectrum_low, spectrum_high = get_power_spectrum(eeg_epochs_fft, truth_labels, channel_electrode)
 
-    envelope_low = get_envelope(data, filtered_data_low, channel_to_plot=channel_electrode)
-    eeg_epochs_low, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time,
-                                                       eeg_data=envelope_low, stimulus_frequency=high_stimulus_frequency)
+    # envelope_low = get_envelope(filtered_data_low, channel_to_plot=channel_electrode)
+    # eeg_epochs_low, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time,
+    #                                                    stimulus_frequency=high_stimulus_frequency)
 
-    
     # predict: compare FFT data for the two stimuli
-      
-    
-    predictor = envelope_high - envelope_low
+    # predictor = envelope_high - envelope_low
+    predictor = spectrum_high - spectrum_low
    
     # declare empty array to contain predictions
     predicted_labels = np.zeros(truth_labels.shape)
