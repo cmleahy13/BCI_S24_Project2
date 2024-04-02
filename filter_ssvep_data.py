@@ -16,6 +16,7 @@ Useful abbreviations:
     IIR: Infinite impulse response
 
 @authors: Claire Leahy and Ron Bryant
+***UPDATED BY LUTE LILLO AND CLAIRE LEAHY***
     
 """
 
@@ -305,6 +306,9 @@ def plot_filtered_spectra(data, filtered_data, envelope, channels=['Fz','Oz'], s
     Description
     -----------
     Function to plot the filtered power spectra of raw EEG data, filtered EEG data, and the envelope of that data for electrodes of interest. This code relies upon functions (some of which were modified) from Lab 3.
+    
+    ***UPDATES***
+    Removed normalization factor parameters from plot_power_spectrum() function
 
     Parameters
     ----------
@@ -338,19 +342,17 @@ def plot_filtered_spectra(data, filtered_data, envelope, channels=['Fz','Oz'], s
     # raw data
     raw_epochs, epoch_times, is_trial_15Hz = epoch_ssvep_data(data, eeg_data=None) # epoch data with default conditions
     raw_epochs_fft, fft_frequencies = get_frequency_spectrum(raw_epochs, fs) # frequency spectrum
-    raw_spectrum_db_15Hz, raw_spectrum_db_12Hz, raw_event_15_normalization_factor, raw_event_12_normalization_factor = plot_power_spectrum(raw_epochs_fft, fft_frequencies, is_trial_15Hz, all_channels, channels, subject, is_plotting=False, event_15_normalization_factor=None, event_12_normalization_factor=None) # power spectrum
+    raw_spectrum_db_15Hz, raw_spectrum_db_12Hz = plot_power_spectrum(raw_epochs_fft, fft_frequencies, is_trial_15Hz, all_channels, channels, subject, is_plotting=False) # power spectrum
     
     # filtered data
     filtered_epochs = epoch_ssvep_data(data, eeg_data=filtered_data)[0] # epoch filtered data, only need epochs
     filtered_epochs_fft = get_frequency_spectrum(filtered_epochs, fs)[0] # frequency spectrum of filtered data, only need FFT of epochs
-    # filtered_spectrum_db_15Hz, filtered_spectrum_db_12Hz = plot_power_spectrum(filtered_epochs_fft, fft_frequencies, is_trial_15Hz, all_channels, channels, subject, is_plotting=False, event_15_normalization_factor=raw_event_15_normalization_factor, event_12_normalization_factor=raw_event_12_normalization_factor)[0:2] # normalized to raw spectra
-    filtered_spectrum_db_15Hz, filtered_spectrum_db_12Hz = plot_power_spectrum(filtered_epochs_fft, fft_frequencies, is_trial_15Hz, all_channels, channels, subject, is_plotting=False, event_15_normalization_factor=None, event_12_normalization_factor=None)[0:2] # normalized to itself
+    filtered_spectrum_db_15Hz, filtered_spectrum_db_12Hz = plot_power_spectrum(filtered_epochs_fft, fft_frequencies, is_trial_15Hz, all_channels, channels, subject, is_plotting=False)
     
     # envelope data
     envelope_epochs = epoch_ssvep_data(data, eeg_data=envelope)[0] # epoch envelope data, only need epochs
     envelope_epochs_fft = get_frequency_spectrum(envelope_epochs, fs)[0] # frequency spectrum of envelope data, only need FFT of epochs
-    # envelope_spectrum_db_15Hz, envelope_spectrum_db_12Hz = plot_power_spectrum(envelope_epochs_fft, fft_frequencies, is_trial_15Hz, all_channels, channels, subject, is_plotting=False, event_15_normalization_factor=raw_event_15_normalization_factor, event_12_normalization_factor=raw_event_12_normalization_factor)[0:2] # normalized to raw spectra
-    envelope_spectrum_db_15Hz, envelope_spectrum_db_12Hz = plot_power_spectrum(envelope_epochs_fft, fft_frequencies, is_trial_15Hz, all_channels, channels, subject, is_plotting=False, event_15_normalization_factor=None, event_12_normalization_factor=None)[0:2] # normalized to itself
+    envelope_spectrum_db_15Hz, envelope_spectrum_db_12Hz = plot_power_spectrum(envelope_epochs_fft, fft_frequencies, is_trial_15Hz, all_channels, channels, subject, is_plotting=False)
     
     # initialize figure
     figure, plots = plt.subplots(channel_count,3, sharex=True, sharey=True, figsize=(12, 8))
