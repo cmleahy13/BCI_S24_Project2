@@ -176,7 +176,7 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     ***UPDATES (1)***
     Optional input of eeg_data added (default is None). EEG data has been converted to microvolts where applicable. epoch_times has been corrected (no longer uses linspace).
     ***UPDATES (2)***
-    Optional input of stimulus_frequency added (default is '15Hz'). This will take away the hard-coded comparison for stimuli frequencies. Renamed is_trial_15Hz variable to truth_labels to represent the greater flexibility the variable now exhibits.
+    Optional input of stimulus_frequency added (default is '15Hz'). This will take away the hard-coded comparison for stimuli frequencies.
 
     Parameters
     ----------
@@ -199,7 +199,7 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
         Array containing the EEG data in volts from each of the electrode channels organized by periods of time in which an event (12Hz or 15Hz flashes) occurs.
     epoch_times : array of floats, size Sx1, where S is the number of samples within each epoch
         Array containing the relative times in seconds of each sample within an epoch.
-    truth_labels : array of boolean, size Ex1, where E is the number of epochs (or events)
+    is_trial_15Hz : array of boolean, size Ex1, where E is the number of epochs (or events)
         Array containing True if the epoch is an event at 15Hz, False if the epoch is an event at 12Hz.
 
     """
@@ -229,9 +229,9 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     epoch_times = np.arange(epoch_start_time, epoch_end_time, 1/fs)
     
     # create boolean array containing True if the event is a 15Hz sample, False if 12Hz
-    truth_labels = np.array([True if event == stimulus_frequency else False for event in event_types])
+    is_trial_15Hz = np.array([True if event == stimulus_frequency else False for event in event_types])
     
-    return eeg_epochs, epoch_times, truth_labels
+    return eeg_epochs, epoch_times, is_trial_15Hz
 
 #%% Part 4: Take the Fourier Transform
 
