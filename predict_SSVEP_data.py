@@ -9,7 +9,7 @@ Created on Thu Mar 28 19:35:53 2024
 # import packages
 import numpy as np
 from matplotlib import pyplot as plt
-from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_power_spectrum
+from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_power_spectrum, get_power_spectrum
 
 #%% Part A: Generate Predictions
 
@@ -25,7 +25,7 @@ from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_pow
 
 """
 
-def generate_fft_predictions(data, channel, epoch_start_time=0, epoch_end_time=20):
+def generate_fft_predictions(data, channel_electrode, epoch_start_time=0, epoch_end_time=20):
     
     # extract data
     eeg = data['eeg']*10**6 # convert to µV
@@ -51,6 +51,9 @@ def generate_fft_predictions(data, channel, epoch_start_time=0, epoch_end_time=2
     eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)
     # calculate power spectrum - alter function in import_ssvep_data
     # do we go as far as comparing the envelopes?
+    
+    # TODO: Try - Catch error for channels to be of type = List()
+    spectrum_db_12Hz, spectrum_db_15Hz = get_power_spectrum(eeg_epochs_fft, is_trial_15Hz=truth_labels, channels=channel_electrode)
     
     # compare predicted labels to truth labels for each epoch
     predicted_labels = np.zeros(truth_labels.shape) # declare empty array to contain predictions
