@@ -204,7 +204,8 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
   
     # extract data
     if eeg_data is None:
-        eeg_data = (data_dict['eeg'])*(10**6) # defaulting with dictionary extraction, converted to µV    
+        eeg_data = (data_dict['eeg'])*(10**6) # defaulting with dictionary extraction, converted to µV   
+         
     channels = list(data_dict['channels']) # convert to list
     fs = data_dict['fs']
     event_durations = data_dict['event_durations'].astype(int) # cast to contain int instead of float

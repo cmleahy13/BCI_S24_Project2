@@ -55,40 +55,40 @@ def make_bandpass_filter(low_cutoff, high_cutoff, filter_type='hann', filter_ord
     
     # get filter coefficients
     nyquist_frequency = fs/2 # get Nyquist frequency to use in filter
-    filter_coefficients = firwin(filter_order+1, [low_cutoff/nyquist_frequency, high_cutoff/nyquist_frequency], window='hann', pass_zero='bandpass')
+    filter_coefficients = firwin(filter_order+1, [low_cutoff/nyquist_frequency, high_cutoff/nyquist_frequency], window=filter_type, pass_zero='bandpass')
 
     # get frequency response parameters
     filter_frequencies, frequency_responses = freqz(filter_coefficients, fs=fs)
     frequency_responses_dB=10*(np.log10(frequency_responses*np.conj(frequency_responses))) # use conjugate due to complex numbers
 
-    # create figure
-    plt.figure(figsize=(8,6), clear=True) 
+    # # create figure
+    # plt.figure(figsize=(8,6), clear=True) 
     
-    # impulse response (subplot 1)
-    plt.subplot(2,1,1)
-    plt.plot(np.arange(0,len(filter_coefficients))/fs, filter_coefficients)
-    # subplot format
-    plt.title ('Impulse Response')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Gain')
-    plt.grid()
+    # # impulse response (subplot 1)
+    # plt.subplot(2,1,1)
+    # plt.plot(np.arange(0,len(filter_coefficients))/fs, filter_coefficients)
+    # # subplot format
+    # plt.title ('Impulse Response')
+    # plt.xlabel('Time (s)')
+    # plt.ylabel('Gain')
+    # plt.grid()
     
-    # frequency response (subplot 2)
-    plt.subplot(2,1,2)
-    plt.plot(filter_frequencies, frequency_responses_dB)
-    # subplot format
-    plt.xlim(0,40)
-    plt.title('Frequency Response')
-    plt.xlabel('Frequency (Hz)')
-    plt.ylabel('Amplitude Gain (dB)')
-    plt.grid()
+    # # frequency response (subplot 2)
+    # plt.subplot(2,1,2)
+    # plt.plot(filter_frequencies, frequency_responses_dB)
+    # # subplot format
+    # plt.xlim(0,40)
+    # plt.title('Frequency Response')
+    # plt.xlabel('Frequency (Hz)')
+    # plt.ylabel('Amplitude Gain (dB)')
+    # plt.grid()
     
-    # general figure formatting
-    plt.suptitle(f'Bandpass Hann Filter with fc=[{low_cutoff}, {high_cutoff}], order={filter_order}')
-    plt.tight_layout()
+    # # general figure formatting
+    # plt.suptitle(f'Bandpass Hann Filter with fc=[{low_cutoff}, {high_cutoff}], order={filter_order}')
+    # plt.tight_layout()
     
-    # save figure
-    plt.savefig(f'hann_filter_{low_cutoff}-{high_cutoff}Hz_order{filter_order}')
+    # # save figure
+    # plt.savefig(f'hann_filter_{low_cutoff}-{high_cutoff}Hz_order{filter_order}')
     
     return filter_coefficients
 
@@ -156,9 +156,9 @@ def get_envelope(data, filtered_data, channel_to_plot=None, ssvep_frequency=None
         The evevelope of each bandpass filtered signal in microvolts.
     '''
     
-    # extract necessary data from the dictionary
-    channels = list(data['channels'])
-    fs = data['fs']
+    # # extract necessary data from the dictionary
+    # channels = list(data['channels'])
+    # fs = data['fs']
     
     # variables for sizing
     channel_count = len(filtered_data) # 1st dimension is number of channels
@@ -172,33 +172,33 @@ def get_envelope(data, filtered_data, channel_to_plot=None, ssvep_frequency=None
         
         envelope[channel_index]=np.abs(hilbert(x=filtered_data[channel_index]))
         
-    # data for title if ssvep_frequency is None
-    if ssvep_frequency == None:
-        ssvep_frequency = '[Unknown]'
+    # # data for title if ssvep_frequency is None
+    # if ssvep_frequency == None:
+    #     ssvep_frequency = '[Unknown]'
     
     # plot the filtered data and envelope if given a channel to plot 
-    if channel_to_plot != None:
+    # if channel_to_plot != None:
         
-        # time parameters
-        T = filtered_data.shape[1]/fs # total time
-        t = np.arange(0,T,1/fs) # time axis to plot
+    #     # time parameters
+    #     T = filtered_data.shape[1]/fs # total time
+    #     t = np.arange(0,T,1/fs) # time axis to plot
         
-        # extract the index of the channel to plot
-        channel_index = channels.index(channel_to_plot)
+    #     # extract the index of the channel to plot
+    #     channel_index = channels.index(channel_to_plot)
         
-        # create figure
-        plt.figure(figsize=(8,6), clear=True)
+    #     # create figure
+    #     plt.figure(figsize=(8,6), clear=True)
         
-        # plotting
-        plt.plot(t, filtered_data[channel_index], label='filtered signal')
-        plt.plot(t, envelope[channel_index], label='envelope')
+    #     # plotting
+    #     plt.plot(t, filtered_data[channel_index], label='filtered signal')
+    #     plt.plot(t, envelope[channel_index], label='envelope')
         
-        # format figure
-        plt.title(f'{ssvep_frequency}Hz BPF Data (Channel {channel_to_plot})') 
-        plt.xlabel('Time (s)')
-        plt.ylabel('Voltage (µV)') 
-        plt.legend()
-        plt.grid()
+    #     # format figure
+    #     plt.title(f'{ssvep_frequency}Hz BPF Data (Channel {channel_to_plot})') 
+    #     plt.xlabel('Time (s)')
+    #     plt.ylabel('Voltage (µV)') 
+    #     plt.legend()
+    #     plt.grid()
         
         # save figure
         # plt.savefig(f'{ssvep_frequency}Hz_BPF_data_channel_{channel_to_plot}')

@@ -9,7 +9,8 @@ Created on Thu Mar 28 19:35:53 2024
 # import packages
 import numpy as np
 from matplotlib import pyplot as plt
-from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_power_spectrum, get_power_spectrum
+from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, get_power_spectrum
+from filter_ssvep_data import get_envelope, make_bandpass_filter, filter_data
 
 #%% Part A: Generate Predictions
 
@@ -35,33 +36,50 @@ def generate_fft_predictions(data, channel_electrode, epoch_start_time=0, epoch_
     event_samples = data['event_samples']
     event_types = data['event_types']
     
-    # get the stimulus frequencies (sorted low to high)
-    stimulus_frequencies = np.unique(event_types)
+    # Get the stimulus frequencies (sorted low to high)
+    stimulus_frequencies = np.unique(event_types) # Shape (2,)
     
-    # isolate frequency that serves as True (index 1 is the higher frequency)
-    stimulus_frequency = stimulus_frequencies[1]
+    # isolate frequency for high and low
+    high_stimulus_frequency = stimulus_frequencies[-1]
+    high_stimulus_frequency_int = int(high_stimulus_frequency[:2])
     
-    # epoch the data give the channel of interest, start/end times
-    eeg_epochs, epoch_times, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time, stimulus_frequency)
+    low_stimulus_frequency = stimulus_frequencies[0]
+    low_stimulus_frequency_int = int(low_stimulus_frequency[:2])
     
-    # threshold for amplitude comparisons
-    threshold = 0
+    # Get the filter coeff
+    filter_coeff_high = make_bandpass_filter(high_stimulus_frequency_int-1, high_stimulus_frequency_int+1, filter_order=1000, fs=1000)
+    filter_coeff_low = make_bandpass_filter(low_stimulus_frequency_int-1, low_stimulus_frequency_int+1, filter_order=1000, fs=1000)
+    
+    # Get the filtered data for each of the filter coefficients
+    filtered_data_high = filter_data(data, filter_coeff_high)
+    filtered_data_low = filter_data(data, filter_coeff_low)
+    
+    # Get predictor based on amplitude of oscillations and epoch the data give the channel of interest, start/end times
+    envelope_high = get_envelope(data, filtered_data_high, channel_to_plot=channel_electrode)
+    eeg_epochs_high, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time,
+                                                        eeg_data=envelope_high, stimulus_frequency=high_stimulus_frequency)
+    eeg_epochs_fft_high, fft_frequencies = get_frequency_spectrum(eeg_epochs_high, fs)  
+
+    envelope_low = get_envelope(data, filtered_data_low, channel_to_plot=channel_electrode)
+    eeg_epochs_low, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time,
+                                                       eeg_data=envelope_low, stimulus_frequency=high_stimulus_frequency)
+
     
     # predict: compare FFT data for the two stimuli
-    eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)
-    # calculate power spectrum - alter function in import_ssvep_data
-    # do we go as far as comparing the envelopes?
+      
     
-    # TODO: Try - Catch error for channels to be of type = List()
-    spectrum_db_12Hz, spectrum_db_15Hz = get_power_spectrum(eeg_epochs_fft, is_trial_15Hz=truth_labels, channels=channel_electrode)
+    predictor = envelope_high - envelope_low
+   
+    # declare empty array to contain predictions
+    predicted_labels = np.zeros(truth_labels.shape)
     
-    # compare predicted labels to truth labels for each epoch
-    predicted_labels = np.zeros(truth_labels.shape) # declare empty array to contain predictions
-    #for label_index in range(len(predicted_labels)):
-        # if stim15-stim12 > 0:
-            # predicted_labels[label_index] = True
-        # else:
-            # predicted_labels[label_index] = False
+    # Set threshold for comparison
+    threshold = 0
+    for label_index in range(len(predicted_labels)):
+        if predictor > threshold:
+            predicted_labels[label_index] = True
+        else:
+            predicted_labels[label_index] = False
     
     return predicted_labels, truth_labels
 
