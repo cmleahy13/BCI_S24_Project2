@@ -3,13 +3,26 @@
 """
 Created on Thu Mar 28 19:35:53 2024
 
+Useful abbreviations:
+    EEG: electroencephalography
+    SSVEP: steady-state visual evoked potentials
+    fs: sampling frequency
+    FFT: Fast Fourier Transform
+    FIR: Finite impulse response
+    IIR: Infinite impulse response
+    TP: True positive - predicted and truth both True (i.e. 15Hz)
+    TN: True negative - predicted and truth both False
+    FP: False positive - predicted True, truth False
+    FN: False negative - predicted False, truth True
+    ITR: Information transfer rate
+
 @author: Claire Leahy and Lute Lillo Portero
 """
 
 # import packages
 import numpy as np
 from matplotlib import pyplot as plt
-from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_power_spectrum, get_power_spectrum
+from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_power_spectrum
 
 #%% Part A: Generate Predictions
 
@@ -25,7 +38,7 @@ from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_pow
 
 """
 
-def generate_fft_predictions(data, channel_electrode, epoch_start_time=0, epoch_end_time=20):
+def generate_fft_predictions(data, channel, epoch_start_time=0, epoch_end_time=20):
     
     # extract data
     eeg = data['eeg']*10**6 # convert to µV
@@ -52,9 +65,6 @@ def generate_fft_predictions(data, channel_electrode, epoch_start_time=0, epoch_
     # calculate power spectrum - alter function in import_ssvep_data
     # do we go as far as comparing the envelopes?
     
-    # TODO: Try - Catch error for channels to be of type = List()
-    spectrum_db_12Hz, spectrum_db_15Hz = get_power_spectrum(eeg_epochs_fft, is_trial_15Hz=truth_labels, channels=channel_electrode)
-    
     # compare predicted labels to truth labels for each epoch
     predicted_labels = np.zeros(truth_labels.shape) # declare empty array to contain predictions
     #for label_index in range(len(predicted_labels)):
@@ -79,20 +89,27 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
     trials_per_second = data['fs'] # sampling frequency
     epoch_count = len(truth_labels) # same as predicted_labels - is this what is meant by "epoch timing info"?
     
-    # calculate accuracy
-    accuracy = 0
+    # assign counters for confusion matrix values
+    TP = 0 # true positive initial count
+    TN = 0 # true negative initial count
+    FP = 0 # false positive initial count
+    FN = 0 # false negative initial count
     
-    # accuracy = TP + TN/(TP+TN+FP+FN)
-    # TP: predicted and truth both True (i.e. 15Hz)
-    # TN: predicted and truth both False
-    # FP: predicted True, truth False
-    # FN: predicted False, truth True
-    
+    # compare the truth label to the predicted label for each epoch
     for epoch_index in range(epoch_count):
         
         # true positives
-        if predicted_labels[epoch_index] == truth_labels[epoch_index]:
-            TP+=1
+        if (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==True):
+            TP+=1 # add to true positive count
+        elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==False):
+            TN+=1 # add to true negative count
+        elif (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==False):
+            FP+=1 # add to false positive count
+        elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==True):
+            FN+=1 # add to false negative count
+        
+    # calculate accuracy
+    accuracy = TP + TN/(TP+TN+FP+FN)
     
     # calculate ITR
     ITR_trial = np.log2(classes_count) + accuracy*np.log2(accuracy) + (1-accuracy)*np.log2((1-accuracy)/(classes_count-1)) # bits/epoch
