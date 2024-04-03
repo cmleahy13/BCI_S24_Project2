@@ -223,6 +223,19 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     
         end_index = start_index + event_durations[epoch] # find the final sample index for an epoch
         
+        # TODO: Updated to deal with multiple and different start and end times.
+        if end_index > eeg_epochs.shape[2]:
+            new_shape = list(eeg_epochs.shape)
+
+            new_shape[2] = end_index - start_index
+            eeg_epochs_resized = np.zeros(new_shape)
+       
+            # Copy existing data to the resized array
+            eeg_epochs_resized[:, :, :eeg_epochs.shape[2]] = eeg_epochs
+            
+            # Update the reference to the resized array
+            eeg_epochs = eeg_epochs_resized
+            
         eeg_epochs[epoch] = eeg_data[:,start_index:end_index] # for the epoch, add EEG data from all channels (:) for every sample between the start and end indices (start_index:end_index)
             
     # create array containing the times for each sample in the epoch

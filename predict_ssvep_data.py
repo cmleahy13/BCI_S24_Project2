@@ -68,13 +68,13 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
     # calculate the power
     power = (np.abs(eeg_epochs_fft[:,:,:]))**2 # calculate power for each frequency at each electrode
     
-    # Another way of calculating it?
-    spec12_hz, spec15_hz = get_power_spectrum(eeg_epochs_fft, truth_labels, [29])
-    predict = np.concatenate((spec12_hz, spec15_hz), axis=0)
-    print(predict.shape)
-    
     # get channel index for electrode of interest
     channel_index = channels.index(channel)
+    
+    # Another way of calculating it?
+    spec12_hz, spec15_hz = get_power_spectrum(eeg_epochs_fft, truth_labels, [channel_index])
+    predict = np.concatenate((spec12_hz, spec15_hz), axis=0)
+    print(predict.shape)
     
     # declare empty arrays to contain prediction data
     predictor_array = np.zeros(power.shape[0])
@@ -176,6 +176,16 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
     - Allow any possible start/end time
 
 """
+def calculate_multiple_figures_of_merit(data, start_times, end_times, channel):
+    
+    # TODO: Another implementation will be being more careful about the given pairs. But this way checks all.
+    for start in start_times:
+        for end in end_times:
+            if start < end:  # Check if it is a valid start, end time
+                predicted_labels, truth_labels = generate_predictions(data, channel=channel, epoch_start_time=start, epoch_end_time=end)
+                calculate_figures_of_merit(data, predicted_labels, truth_labels)
+            else:
+                print(f"Start time {start}s and End time {end}s are not a possible combination")
 
 #%% Part D: Plot Results
 
