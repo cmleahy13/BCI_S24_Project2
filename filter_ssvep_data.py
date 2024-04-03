@@ -133,7 +133,7 @@ def filter_data(data, b):
 
 #%% Part 4: Calculate the Envelope
 
-def get_envelope(data, filtered_data, channel_to_plot=None, ssvep_frequency=None):
+def get_envelope(filtered_data, channel_to_plot=None, ssvep_frequency=None):
     '''
     Description
     -----------

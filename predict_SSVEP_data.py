@@ -32,11 +32,9 @@ def generate_fft_predictions(data, channel_electrode, epoch_start_time=0, epoch_
     fs = data['fs']
     event_types = data['event_types']
     
-    # eeg_epochs, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time,
-    #                                                     stimulus_frequency=high_stimulus_frequency)
-    # eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)  
-    
-
+    eeg_epochs, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time,
+                                                stimulus_frequency=high_stimulus_frequency)
+    eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)  
     
     # Get the stimulus frequencies (sorted low to high)
     stimulus_frequencies = np.unique(event_types) # Shape (2,)
@@ -69,7 +67,14 @@ def generate_fft_predictions(data, channel_electrode, epoch_start_time=0, epoch_
 
     # predict: compare FFT data for the two stimuli
     # predictor = envelope_high - envelope_low
+    spectrum_high = np.array(spectrum_high)
+    spectrum_low = np.array(spectrum_low)
     predictor = spectrum_high - spectrum_low
+    predictor = np.squeeze(predictor) # Shape (10001,)
+    
+    
+    # print(predictor.shape)
+    print(truth_labels.shape)
    
     # declare empty array to contain predictions
     predicted_labels = np.zeros(truth_labels.shape)
@@ -77,11 +82,13 @@ def generate_fft_predictions(data, channel_electrode, epoch_start_time=0, epoch_
     # Set threshold for comparison
     threshold = 0
     for label_index in range(len(predicted_labels)):
-        if predictor > threshold:
+        
+        if predictor[label_index] > threshold:
             predicted_labels[label_index] = True
         else:
             predicted_labels[label_index] = False
     
+    print(predicted_labels)
     return predicted_labels, truth_labels
 
 #%% Part B: Calculate Accuracy and ITR
