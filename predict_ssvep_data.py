@@ -22,7 +22,7 @@ Useful abbreviations:
 # import packages
 import numpy as np
 from matplotlib import pyplot as plt
-from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_power_spectrum
+from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_power_spectrum, get_power_spectrum
 from filter_ssvep_data import make_bandpass_filter, filter_data, get_envelope
 
 #%% Part A: Generate Predictions
@@ -54,8 +54,9 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
     high = int(high_frequency[:2]) # gets the integer value of the frequency
     
     # epoch the data
+    # TODO: If using different start and end times, it breaks.
     eeg_epochs, epoch_times, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time, eeg_data=None, stimulus_frequency=high_frequency) # truth_labels will contain True if epoch is the higher stimulus frequency
-    
+
     # take the FFT data of the epochs
     eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)
     
@@ -67,6 +68,11 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
     # calculate the power
     power = (np.abs(eeg_epochs_fft[:,:,:]))**2 # calculate power for each frequency at each electrode
     
+    # Another way of calculating it?
+    spec12_hz, spec15_hz = get_power_spectrum(eeg_epochs_fft, truth_labels, [29])
+    predict = np.concatenate((spec12_hz, spec15_hz), axis=0)
+    print(predict.shape)
+    
     # get channel index for electrode of interest
     channel_index = channels.index(channel)
     
@@ -77,19 +83,33 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
     # set threshold for comparison
     threshold = 0
     
-    for epoch_index in range(power.shape[0]):
+    for epoch_index in range(len(truth_labels)):
             
         # generate predictor
-        predictor = power[epoch_index][channel_index][high_frequency_index] - power[epoch_index][channel_index][low_frequency_index]
+        predictor = power[epoch_index, channel_index, high_frequency_index] - power[epoch_index, channel_index, low_frequency_index]
         
-        # fill in predictor array
+        predictor_2= predict[epoch_index, high_frequency_index] - predict[epoch_index, low_frequency_index]
+        
+        print(predictor, predictor_2)
+        
+        # TODO: what is this for? fill in predictor array
         predictor_array[epoch_index] = predictor
-    
+
+        # print(power.shape)
         # compare predictor to threshold
+        if predictor_2> threshold:
+            predicted_labels[epoch_index] = True
+        else:
+            predicted_labels[epoch_index] = False
+            
+        print(predicted_labels)
+        
         if predictor > threshold:
             predicted_labels[epoch_index] = True
         else:
             predicted_labels[epoch_index] = False
+            
+        print(predicted_labels)
     
     return predicted_labels, truth_labels
 
@@ -123,22 +143,28 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
     for epoch_index in range(epoch_count):
         
         if (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==True):
-            TP+=1 # add to true positive count
+            TP += 1 # add to true positive count
         elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==False):
-            TN+=1 # add to true negative count
+            TN += 1 # add to true negative count
         elif (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==False):
-            FP+=1 # add to false positive count
+            FP += 1 # add to false positive count
         elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==True):
-            FN+=1 # add to false negative count
-        
+            FN += 1 # add to false negative count
+ 
     # calculate accuracy
-    accuracy = (TP+TN)/(TP+TN+FP+FN)
+    accuracy = (TP+TN)/(epoch_count)
     
-    # calculate ITR
-    ITR_trial = np.log2(classes_count) + accuracy*np.log2(accuracy) + (1-accuracy)*np.log2((1-accuracy)/(classes_count-1)) # bits/epoch
+    # calculate ITR. TODO: If accuracy is 1, then issue.
+    neg_acc = 1 - accuracy
+    class_count_neg = classes_count - 1
+    print(neg_acc, class_count_neg)
+    
+    
+    ITR_trial = np.log2(classes_count) + accuracy * np.log2(accuracy) + (neg_acc) * np.log2(neg_acc/class_count_neg) # bits/epoch
     
     ITR_time = ITR_trial * trials_per_second # bits/second
     
+    print(ITR_trial, ITR_time)
     return accuracy, ITR_time
 
 #%% Part C: Loop Through Epoch Limits

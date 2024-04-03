@@ -381,3 +381,76 @@ def plot_power_spectrum(eeg_epochs_fft, fft_frequencies, is_trial_15Hz, channels
         print('Plotting frequency data complete.')
         
     return spectrum_db_15Hz, spectrum_db_12Hz 
+
+def get_power_spectrum(eeg_epochs_fft, is_trial_15Hz, channels_to_plot):
+    """
+        Calculate the mean power spectra for the specified channels
+        and then, plot each in their own subplot.
+        
+        Parameters:
+        - eeg_epochs_fft:  3D complex128 array,
+            E x C x F where E is the epoch when the flashing occured, C is the 
+            channels where the data was obtained, F is the frequency in hz
+        - fft_frequencies: 1D complex 128 array
+            Lx1 where L is the frequency corresponding to each column in the FFT
+        - is_trial_15Hz: list
+                an list in which is_trial_15Hz[i] is True if the light was flashing at 15Hz during a given epoch
+        - channels:  1D Array of string, Cx1 where C is the name of each channel by electrode
+        eeg: array of float, C x S where C is the number of channels and 
+        S is the number of samples in a session
+        - channels_to_plot: list
+            list of channel indices to plot, default is ''
+        - subject: Int
+            Subject number that is of interest default is ''
+        
+        Returns:
+        - spectrum_db_12Hz: list of elements per number of channels_to_plot
+            each channel holds an 1D array of float: Px1 where P is the mean power spectrum of 12Hz trials in decibels
+        - spectrum_db_15Hz: list of elements per number of channels_to_plot
+            each channel holds an 1D array of float: Px1 where P is the mean power spectrum of 15Hz trials in decibels
+    
+    """
+   
+    # Initialize variables to store the mean power spectra
+    spectrum_db_12Hz = []
+    spectrum_db_15Hz = []
+    
+    # Iterate over each channel to plot
+    for _, channel_index in enumerate(channels_to_plot):
+
+        # Initialize variables to store the power spectra for 12Hz and 15Hz trials
+        power_12Hz = []
+        power_15Hz = []
+
+        # Iterate over each trial
+        for frequency_index in range(eeg_epochs_fft.shape[0]):
+            # Calculate absolute value of the spectrum
+            spectrum_abs = np.abs(eeg_epochs_fft[frequency_index, channel_index, :])
+
+            # Calculate power by squaring the spectrum
+            power = spectrum_abs ** 2
+
+            # Append power spectra for 12Hz and 15Hz trials
+            if is_trial_15Hz[frequency_index]:
+                power_15Hz.append(power)
+            else:
+                power_12Hz.append(power)
+
+        # Take the mean across trials
+        # mean_power_12Hz = np.mean(power_12Hz, axis=0)
+        # mean_power_15Hz = np.mean(power_15Hz, axis=0)
+
+        # Normalize the power spectra
+        # max_power = np.max([mean_power_12Hz, mean_power_15Hz])
+        # mean_power_12Hz_norm = mean_power_12Hz / max_power
+        # mean_power_15Hz_norm = mean_power_15Hz / max_power
+
+        # Convert to decibel units
+        spectrum_db_12Hz.append(10 * np.log10(power_12Hz))
+        spectrum_db_15Hz.append(10 * np.log10(power_15Hz))       
+
+    spectrum_db_12Hz = np.array(spectrum_db_12Hz)
+    spectrum_db_15Hz = np.array(spectrum_db_15Hz)
+    spectrum_db_12Hz = spectrum_db_12Hz.squeeze(axis=0)
+    spectrum_db_15Hz = spectrum_db_15Hz.squeeze(axis=0)
+    return spectrum_db_12Hz, spectrum_db_15Hz
