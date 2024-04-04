@@ -212,29 +212,16 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     event_durations = data_dict['event_durations'].astype(int) # cast to contain int instead of float
     event_samples = data_dict['event_samples']
     event_types = data_dict['event_types']
-    samples_per_epoch = int(fs*(epoch_end_time-epoch_start_time)) # convert to int
+    # samples_per_epoch = int(fs*(epoch_end_time-epoch_start_time)) # convert to int
     
     # preallocate array to contain epochs
-    eeg_epochs = np.zeros([len(event_samples),len(channels), samples_per_epoch])
-    
+    eeg_epochs = np.zeros([len(event_samples),len(channels), int(len(event_durations)*fs)])
+  
     # load data into array by epoch
     # code adapted from ChatGPT based on our original code (efficiency)
     for epoch, start_index in enumerate(event_samples): # epoch number is 1st value, content of event_samples at epoch number (i.e. the starting index) is 2nd
     
         end_index = start_index + event_durations[epoch] # find the final sample index for an epoch
-        
-        # TODO: Updated to deal with multiple and different start and end times.
-        if end_index > eeg_epochs.shape[2]:
-            new_shape = list(eeg_epochs.shape)
-
-            new_shape[2] = end_index - start_index
-            eeg_epochs_resized = np.zeros(new_shape)
-       
-            # Copy existing data to the resized array
-            eeg_epochs_resized[:, :, :eeg_epochs.shape[2]] = eeg_epochs
-            
-            # Update the reference to the resized array
-            eeg_epochs = eeg_epochs_resized
             
         eeg_epochs[epoch] = eeg_data[:,start_index:end_index] # for the epoch, add EEG data from all channels (:) for every sample between the start and end indices (start_index:end_index)
             

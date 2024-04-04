@@ -74,7 +74,6 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
     # Another way of calculating it?
     spec12_hz, spec15_hz = get_power_spectrum(eeg_epochs_fft, truth_labels, [channel_index])
     predict = np.concatenate((spec12_hz, spec15_hz), axis=0)
-    print(predict.shape)
     
     # declare empty arrays to contain prediction data
     predicted_labels = np.empty(truth_labels.shape, dtype=bool)
@@ -89,7 +88,7 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
         
         predictor_2 = predict[epoch_index, high_frequency_index] - predict[epoch_index, low_frequency_index]
         
-        print(predictor, predictor_2)
+        # print(predictor, predictor_2)
 
         # print(power.shape)
         # compare predictor to threshold
@@ -98,14 +97,14 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
         else:
             predicted_labels[epoch_index] = False
             
-        print(predicted_labels)
+        # print(predicted_labels)
         
         if predictor > threshold:
             predicted_labels[epoch_index] = True
         else:
             predicted_labels[epoch_index] = False
             
-        print(predicted_labels)
+        # print(predicted_labels)
     
     return predicted_labels, truth_labels
 
@@ -176,11 +175,17 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
 def calculate_multiple_figures_of_merit(data, start_times, end_times, channel):
     
     figures_of_merit = []
+    
     for start in start_times:
         for end in end_times:
             if start < end:  # Check if it is a valid start, end time
                 temp_start_end_time_list = []
                 
+                # Generate tuple to times for plotting purposes
+                times_tuple = (start, end)
+                temp_start_end_time_list.append(times_tuple)
+            
+                print(end, start)
                 # Generate Predictions
                 predicted_labels, truth_labels = generate_predictions(data, channel=channel, epoch_start_time=start, epoch_end_time=end)
                 labels_tuple = (predicted_labels, truth_labels)
@@ -195,8 +200,8 @@ def calculate_multiple_figures_of_merit(data, start_times, end_times, channel):
                 figures_of_merit.append(temp_start_end_time_list)
             else:
                 print(f"Start time {start}s and End time {end}s are not a possible combination")
-                
-    figures_of_merit = np.array(figures_of_merit)
+        
+    # figures_of_merit = np.array(figures_of_merit)
     
     return figures_of_merit
 
@@ -209,6 +214,32 @@ def calculate_multiple_figures_of_merit(data, start_times, end_times, channel):
     - Run code for both subjects
 
 """
+def plot_figures_of_merit(figures_of_merit, start_times, end_times):
+
+    total_accuracies = []
+    total_ITR_time = []
+    
+    for figures in figures_of_merit:
+        # start, end = figures[0]
+        # predicted_labels, truth_labels = figures[1]
+        accuracy, ITR_time = figures[2]
+        total_ITR_time.append(ITR_time)
+        total_accuracies.append(accuracy)
+        
+    fig, ax = plt.subplots(1, 2, figsize=(15, 8))
+
+    start_time_arr = np.array(start_times)
+    end_time_arr = np.array(end_times)
+
+    # Stack the arrays horizontally to create a matrix
+    time_intervals = np.column_stack((start_time_arr, end_time_arr))
+    # print(total_accuracies)
+    total_accuracies = np.array(total_accuracies)
+    ax[0].pcolor(time_intervals, total_accuracies)
+    ax[1].pcolor(time_intervals, total_ITR_time)
+    
+    plt.savefig(f"plots/test.png")
+        
 
 #%% Part E: Create a Predictor Histogram
 
