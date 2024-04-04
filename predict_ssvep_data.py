@@ -88,7 +88,7 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
         # generate predictor
         predictor = power[epoch_index, channel_index, high_frequency_index] - power[epoch_index, channel_index, low_frequency_index]
         
-        predictor_2= predict[epoch_index, high_frequency_index] - predict[epoch_index, low_frequency_index]
+        predictor_2 = predict[epoch_index, high_frequency_index] - predict[epoch_index, low_frequency_index]
         
         print(predictor, predictor_2)
         
@@ -97,7 +97,7 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
 
         # print(power.shape)
         # compare predictor to threshold
-        if predictor_2> threshold:
+        if predictor_2 > threshold:
             predicted_labels[epoch_index] = True
         else:
             predicted_labels[epoch_index] = False
@@ -154,13 +154,15 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
     # calculate accuracy
     accuracy = (TP+TN)/(epoch_count)
     
-    # calculate ITR. TODO: If accuracy is 1, then issue.
-    neg_acc = 1 - accuracy
+    # Calculate ITR.
+    inverse_acc = 1 - accuracy
     class_count_neg = classes_count - 1
-    print(neg_acc, class_count_neg)
     
-    
-    ITR_trial = np.log2(classes_count) + accuracy * np.log2(accuracy) + (neg_acc) * np.log2(neg_acc/class_count_neg) # bits/epoch
+    # Accounting for 100% accuracy by implementing small noise
+    if inverse_acc == 0:
+        inverse_acc = 0.0001
+        
+    ITR_trial = np.log2(classes_count) + accuracy * np.log2(accuracy) + (inverse_acc) * np.log2(inverse_acc/class_count_neg) # bits/epoch
     
     ITR_time = ITR_trial * trials_per_second # bits/second
     
