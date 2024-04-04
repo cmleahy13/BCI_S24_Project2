@@ -185,7 +185,6 @@ def calculate_multiple_figures_of_merit(data, start_times, end_times, channel):
                 times_tuple = (start, end)
                 temp_start_end_time_list.append(times_tuple)
             
-                print(end, start)
                 # Generate Predictions
                 predicted_labels, truth_labels = generate_predictions(data, channel=channel, epoch_start_time=start, epoch_end_time=end)
                 labels_tuple = (predicted_labels, truth_labels)
@@ -223,10 +222,11 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times):
         # start, end = figures[0]
         # predicted_labels, truth_labels = figures[1]
         accuracy, ITR_time = figures[2]
+        print(accuracy)
         total_ITR_time.append(ITR_time)
         total_accuracies.append(accuracy)
         
-    fig, ax = plt.subplots(1, 2, figsize=(15, 8))
+    fig, ax = plt.subplots(1, 2, figsize=(15, 8), sharex=True, sharey=True)
 
     start_times = np.array(start_times)
     end_times = np.array(end_times)
@@ -235,14 +235,21 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times):
     
     cols = len(start_times)
     rows = len(end_times)
+    # x = np.array([start_times[0]] + end_times)  # Add start time of first block to cover the entire range
+    # y = np.array([start_times[0]] + end_times)  # Add start time of first block to cover the entire range
+    # x, y = np.meshgrid(x, y)
     
     total_accuracies = np.array(total_accuracies)
     total_ITR_time = np.array(total_ITR_time)
     total_ITR_time = total_ITR_time.reshape(rows, cols)
     total_accuracies = total_accuracies.reshape(rows, cols)
+    print(total_accuracies)
+    # TODO: Z is a test. total_accuracies is just not correct
+    Z = np.random.rand(rows,cols)
+    ax[0].pcolor(x, y, Z, cmap='viridis')
+    ax[1].pcolor(x, y, total_accuracies, cmap='viridis')
+    # ax[1].pcolor(x, y, total_ITR_time, cmap='viridis')
     
-    ax[0].pcolor(x, y, total_accuracies)
-    ax[1].pcolor(x, y, total_ITR_time)
     
     plt.savefig(f"plots/test.png")
         

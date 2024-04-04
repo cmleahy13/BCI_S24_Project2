@@ -34,7 +34,8 @@ data_s2 = load_ssvep_data(subject=2, data_directory='SsvepData/')
 # calculate figures of merit for subject 2, channel Oz
 # accuracy_s2, ITR_time_s2 = calculate_figures_of_merit(data_s2, predicted_labels_s2, truth_labels_s2, classes_count=2)
 
-start_times = [0, 10, 20]
-end_times = [30, 40, 50]
-figures_merit = calculate_multiple_figures_of_merit(data_s1, start_times, end_times, channel='Fz')
+# TODO: fix problem for non-valid times when plotting
+start_times = [0, 3, 5, 9, 11, 15, 16]
+end_times   = [17, 19, 20, 22, 25, 30, 33]
+figures_merit = calculate_multiple_figures_of_merit(data_s1, start_times, end_times, channel='Pz')
 plot_figures_of_merit(figures_merit, start_times, end_times)
