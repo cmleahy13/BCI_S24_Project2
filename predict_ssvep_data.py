@@ -228,15 +228,21 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times):
         
     fig, ax = plt.subplots(1, 2, figsize=(15, 8))
 
-    start_time_arr = np.array(start_times)
-    end_time_arr = np.array(end_times)
-
-    # Stack the arrays horizontally to create a matrix
-    time_intervals = np.column_stack((start_time_arr, end_time_arr))
-    # print(total_accuracies)
+    start_times = np.array(start_times)
+    end_times = np.array(end_times)
+    
+    x, y = np.meshgrid(end_times, start_times)
+    
+    cols = len(start_times)
+    rows = len(end_times)
+    
     total_accuracies = np.array(total_accuracies)
-    ax[0].pcolor(time_intervals, total_accuracies)
-    ax[1].pcolor(time_intervals, total_ITR_time)
+    total_ITR_time = np.array(total_ITR_time)
+    total_ITR_time = total_ITR_time.reshape(rows, cols)
+    total_accuracies = total_accuracies.reshape(rows, cols)
+    
+    ax[0].pcolor(x, y, total_accuracies)
+    ax[1].pcolor(x, y, total_ITR_time)
     
     plt.savefig(f"plots/test.png")
         
