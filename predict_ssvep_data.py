@@ -55,7 +55,7 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
     
     # epoch the data
     # TODO: If using different start and end times, it breaks.
-    eeg_epochs, epoch_times, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time, eeg_data=None, stimulus_frequency=high_frequency) # truth_labels will contain True if epoch is the higher stimulus frequency
+    eeg_epochs, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time, eeg_data=None, stimulus_frequency=high_frequency) # truth_labels will contain True if epoch is the higher stimulus frequency
 
     # take the FFT data of the epochs
     eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)
@@ -77,7 +77,6 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
     print(predict.shape)
     
     # declare empty arrays to contain prediction data
-    predictor_array = np.zeros(power.shape[0])
     predicted_labels = np.empty(truth_labels.shape, dtype=bool)
     
     # set threshold for comparison
@@ -91,9 +90,6 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
         predictor_2 = predict[epoch_index, high_frequency_index] - predict[epoch_index, low_frequency_index]
         
         print(predictor, predictor_2)
-        
-        # TODO: what is this for? fill in predictor array
-        predictor_array[epoch_index] = predictor
 
         # print(power.shape)
         # compare predictor to threshold
@@ -166,7 +162,6 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
     
     ITR_time = ITR_trial * trials_per_second # bits/second
     
-    print(ITR_trial, ITR_time)
     return accuracy, ITR_time
 
 #%% Part C: Loop Through Epoch Limits
@@ -180,14 +175,30 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
 """
 def calculate_multiple_figures_of_merit(data, start_times, end_times, channel):
     
-    # TODO: Another implementation will be being more careful about the given pairs. But this way checks all.
+    figures_of_merit = []
     for start in start_times:
         for end in end_times:
             if start < end:  # Check if it is a valid start, end time
+                temp_start_end_time_list = []
+                
+                # Generate Predictions
                 predicted_labels, truth_labels = generate_predictions(data, channel=channel, epoch_start_time=start, epoch_end_time=end)
-                calculate_figures_of_merit(data, predicted_labels, truth_labels)
+                labels_tuple = (predicted_labels, truth_labels)
+                temp_start_end_time_list.append(labels_tuple)
+                
+                # Generate Accuracy and ITR times
+                accuracy, ITR_time = calculate_figures_of_merit(data, predicted_labels, truth_labels)
+                merit_values_tuple = (accuracy, ITR_time)
+                temp_start_end_time_list.append(merit_values_tuple)
+                
+                # Create Data Structure to hold all figures of merit for valid star-end times
+                figures_of_merit.append(temp_start_end_time_list)
             else:
                 print(f"Start time {start}s and End time {end}s are not a possible combination")
+                
+    figures_of_merit = np.array(figures_of_merit)
+    
+    return figures_of_merit
 
 #%% Part D: Plot Results
 
