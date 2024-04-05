@@ -22,7 +22,7 @@ data_s1 = load_ssvep_data(subject=1, data_directory='SsvepData/')
 #%% Part A: Generate Predictions
 
 # Generate predictions for subject 1, channel Oz
-predicted_labels_s1, truth_labels_s1 = generate_predictions(data=data_s1, channel='Oz', epoch_start_time=0, epoch_end_time=10)
+predicted_labels_s1, truth_labels_s1 = generate_predictions(data=data_s1, channel='Oz', epoch_start_time=0, epoch_end_time=20)
 
 # Generate predictions for subject 2, channel Oz
 #predicted_labels_s2, truth_labels_s2 = generate_predictions(data=data_s2, channel='Oz', epoch_start_time=0, epoch_end_time=10)

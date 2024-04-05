@@ -41,7 +41,7 @@ from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
 """
 
 def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=20):
-    
+
     # Extract necessary data
     channels = list(data['channels']) # convert to list
     fs = data['fs']
@@ -142,7 +142,8 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
 """
 
     TODO:
-        - EVERY EPOCH IS RETURNING THE SAME VALUE FOR A GIVEN CHANNEL!!!
+        - error occurs during generate predictions
+        - want to calculate the predictions after looping and not during?
 
 """
 
@@ -156,7 +157,15 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
         
         for end in end_times:
             
-            if start < end:  # check for validity of pair
+            if end << start: # check to make sure valid start and end time
+               
+                figures_of_merit.append([0.5,0]) # placeholder value for invalid start-end combinations should be 50% accuracy (guessing), 0 ITR (no information transferred)
+            
+            elif (end - start) >> 20: # check to make sure times will be within the trial range
+                
+                figures_of_merit.append([0.5,0]) # placeholder value for invalid start-end combinations should be 50% accuracy (guessing), 0 ITR (no information transferred)
+
+            else:
                 
                 # Predictions
                 predicted_labels, truth_labels = generate_predictions(data, channel, epoch_start_time=start, epoch_end_time=end)
@@ -167,10 +176,6 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
                 
                 # Update list with the merit values for the epoch
                 figures_of_merit.append(merit_values)
-            
-            else:
-                print(f"Start time {start}s and end time {end}s are not a possible combination")
-                figures_of_merit.append([0.5,0]) # placeholder value for invalid start-end combinations should be 50% accuracy (guessing), 0 ITR (no information transferred) 
      
     # Convert to an array
     figures_of_merit = np.array(figures_of_merit)
