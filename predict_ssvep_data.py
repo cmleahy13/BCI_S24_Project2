@@ -139,6 +139,13 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
 
 #%% Part C: Loop Through Epoch Limits
 
+"""
+
+    TODO:
+        - test a bunch of different epoch lengths to ensure that accuracy, etc. changes
+
+"""
+
 def figures_of_merit_over_epochs(data, start_times, end_times, channel):
     
     # Declare list to store label data and figures of merit for each epoch
@@ -172,6 +179,14 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
 
 #%% Part D: Plot Results
 
+"""
+
+    TODO:
+        - add colorbar (https://stackoverflow.com/questions/23876588/matplotlib-colorbar-in-each-subplot)
+        - yticks not showing for ITR subplot
+
+"""
+
 def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, subject):
 
     # Convert start and end times lists to arrays for plotting
@@ -197,7 +212,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
         all_ITR_time.append(ITR_time)
     
     # Initialize figure
-    fig, ax = plt.subplots(1, 2, figsize=(15, 8), sharex=True, sharey=True)
+    figure, figure_of_merit_plot = plt.subplots(1, 2, figsize=(15, 8), sharex=True, sharey=True)
     
     # Update start and end times as grid
     end_times_grid, start_times_grid = np.meshgrid(end_times, start_times)
@@ -211,9 +226,29 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     all_ITR_time =all_ITR_time.reshape(end_times_count, start_times_count)
     
     # Plot the figures of merit over epoch lengths
-    ax[0].pcolor(end_times_grid, start_times_grid, all_accuracies, cmap='viridis')
-    ax[1].pcolor(end_times_grid, start_times_grid, all_ITR_time, cmap='viridis')
+    figure_of_merit_plot[0].pcolor(end_times_grid, start_times_grid, all_accuracies, cmap='viridis')
+    figure_of_merit_plot[1].pcolor(end_times_grid, start_times_grid, all_ITR_time, cmap='viridis')
     
+    # Format and stylize figure
+    # Format accuracy subplot
+    figure_of_merit_plot[0].grid()
+    figure_of_merit_plot[0].set_title('Accuracy')
+    figure_of_merit_plot[0].set_xlabel('Epoch End Time (s)')
+    figure_of_merit_plot[0].set_ylabel('Epoch Start Time (s)')
+    figure_of_merit_plot[0].set_ylim(0, start_times.max())
+    figure_of_merit_plot[0].set_yticks(np.arange(start_times.min(), start_times.max(), 2.5))
+    
+    # Format ITR subplot
+    figure_of_merit_plot[1].grid()
+    figure_of_merit_plot[1].set_title('Information Transfer Rate')
+    figure_of_merit_plot[1].set_xlabel('Epoch End Time (s)')
+    figure_of_merit_plot[1].set_ylabel('Epoch Start Time (s)')
+    figure_of_merit_plot[1].set_ylim(0, start_times.max())
+    figure_of_merit_plot[1].set_yticks(np.arange(start_times.min(), start_times.max(), 2.5))
+    
+    # Format whole figure
+    figure.suptitle(f'SSVEP Subject {subject}, Channel {channel}')
+    figure.tight_layout()
     
     plt.savefig(f"subject_{subject}_channel_{channel}_figures_of_merit.png")
 
