@@ -72,6 +72,9 @@ def plot_raw_data(data, subject, channels_to_plot):
     Description
     -----------
     Function that plots the EEG data and the event type (12Hz or 15Hz) in the time domain.
+    
+    ***UPDATES (2)***
+    Changed location of microvolts conversion to be earlier. Removed some print statements to clean up code.
 
     Parameters
     ----------
@@ -89,7 +92,7 @@ def plot_raw_data(data, subject, channels_to_plot):
     """
     
     # extract data
-    eeg = data['eeg']
+    eeg = data['eeg']*(10**6)
     channels = list(data['channels'])
     fs = data['fs']
     event_durations = data['event_durations']
@@ -108,9 +111,6 @@ def plot_raw_data(data, subject, channels_to_plot):
     # for each event (:), 0 is the interval start time, and 1 is the interval end time
     event_intervals[:,0] = event_samples/fs # convert start samples to times
     event_intervals[:,1] = event_ends/fs # convert end samples to times
-    
-    # inform user of plotting
-    print('\nPlotting raw data...')
     
     # initialize figure
     figure, sub_figure = plt.subplots(2, sharex=True)
@@ -137,7 +137,7 @@ def plot_raw_data(data, subject, channels_to_plot):
         eeg_data = data['eeg'][channel_index] # EEG data for the channel
     
         # plot EEG data in µV from channel
-        sub_figure[1].plot(t, eeg_data*(10**6), label=channel_name) 
+        sub_figure[1].plot(t, eeg_data, label=channel_name) 
     
     # format figure
     # subplot 1: sample frequency at given time
@@ -161,9 +161,6 @@ def plot_raw_data(data, subject, channels_to_plot):
     
     # save image
     plt.savefig(f'SSVEP_S{subject}_rawdata.png')
-    
-    # inform user of plotting completion
-    print('Plotting raw data complete.')
 
 #%% Part 3: Extract the Epochs
 
@@ -176,7 +173,7 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     ***UPDATES (1)***
     Optional input of eeg_data added (default is None). EEG data has been converted to microvolts where applicable. epoch_times has been corrected (no longer uses linspace).
     ***UPDATES (2)***
-    Optional input of stimulus_frequency added (default is '15Hz'). This will take away the hard-coded comparison for stimuli frequencies.
+    Optional input of stimulus_frequency added (default is '15Hz'). This will take away the hard-coded comparison for stimuli frequencies. Also further updated eeg_epochs to change size and ensure it was based on event_durations and not the start or end times given as inputs.
 
     Parameters
     ----------
@@ -212,19 +209,18 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     event_durations = data_dict['event_durations'].astype(int) # cast to contain int instead of float
     event_samples = data_dict['event_samples']
     event_types = data_dict['event_types']
-    # samples_per_epoch = int(fs*(epoch_end_time-epoch_start_time)) # convert to int
     
     # preallocate array to contain epochs
     eeg_epochs = np.zeros([len(event_samples),len(channels), int(len(event_durations)*fs)])
-  
+    
     # load data into array by epoch
     # code adapted from ChatGPT based on our original code (efficiency)
     for epoch, start_index in enumerate(event_samples): # epoch number is 1st value, content of event_samples at epoch number (i.e. the starting index) is 2nd
     
         end_index = start_index + event_durations[epoch] # find the final sample index for an epoch
-            
+        
         eeg_epochs[epoch] = eeg_data[:,start_index:end_index] # for the epoch, add EEG data from all channels (:) for every sample between the start and end indices (start_index:end_index)
-            
+        
     # create array containing the times for each sample in the epoch
     epoch_times = np.arange(epoch_start_time, epoch_end_time, 1/fs)
     
@@ -276,7 +272,7 @@ def plot_power_spectrum(eeg_epochs_fft, fft_frequencies, is_trial_15Hz, channels
     ***UPDATES (1)***
     Optional input of is_plotting added (default is True) that gives the user the option to suppress the plot when generating the power spectra. Optional inputs of event_15_normalization_factor and event_12_normalization_factor added (defaults are None) that give the user the option to normalize the epoched data to a different dataset. event_15_normalization_factor and event_12_normalization_factor are also outputs and give the factors to which the data were normalized (which may or may not contain the maximum mean powers for the dataset of interest depending on the input).
     ***UPDATES (2)***
-    Removed normalization factor parameters and returns. Changed 15Hz to be general high frequency and changed 12Hz to be general low frequency (exception of the return name).
+    Removed normalization factor parameters and returns. Changed 15Hz to be general high frequency and changed 12Hz to be general low frequency (exception of the return name). Removed some print statements to clean up code.
 
     Parameters
     ----------
@@ -297,9 +293,9 @@ def plot_power_spectrum(eeg_epochs_fft, fft_frequencies, is_trial_15Hz, channels
 
     Returns
     -------
-    spectrum_db_high_frequency : array of floats, size Cx((fs/2)+1), where C is the number of channels and fs is the sampling frequency
+    spectrum_db_15Hz : array of floats, size Cx((fs/2)+1), where C is the number of channels and fs is the sampling frequency
         Array containing the power spectrum of the higher frequency events for each channel.
-    spectrum_db_low_frequency : array of floats, size Cx((fs/2)+1), where C is the number of channels and fs is the sampling frequency
+    spectrum_db_12Hz : array of floats, size Cx((fs/2)+1), where C is the number of channels and fs is the sampling frequency
         Array containing the power spectrum of the lower frequency events for each channel.
 
     """
@@ -342,9 +338,6 @@ def plot_power_spectrum(eeg_epochs_fft, fft_frequencies, is_trial_15Hz, channels
     # plotting
     if is_plotting == True:
         
-        # inform user of plotting
-        print('\nPlotting frequency data...')
-        
         # isolate channel being plotted
         channel_to_plot = [channels.index(channel_name) for channel_name in channels_to_plot]
         
@@ -377,80 +370,4 @@ def plot_power_spectrum(eeg_epochs_fft, fft_frequencies, is_trial_15Hz, channels
         # save image
         plt.savefig(f'SSVEP_S{subject}_frequency_content.png')
         
-        # inform user of plotting completion
-        print('Plotting frequency data complete.')
-        
     return spectrum_db_15Hz, spectrum_db_12Hz 
-
-def get_power_spectrum(eeg_epochs_fft, is_trial_15Hz, channels_to_plot):
-    """
-        Calculate the mean power spectra for the specified channels
-        and then, plot each in their own subplot.
-        
-        Parameters:
-        - eeg_epochs_fft:  3D complex128 array,
-            E x C x F where E is the epoch when the flashing occured, C is the 
-            channels where the data was obtained, F is the frequency in hz
-        - fft_frequencies: 1D complex 128 array
-            Lx1 where L is the frequency corresponding to each column in the FFT
-        - is_trial_15Hz: list
-                an list in which is_trial_15Hz[i] is True if the light was flashing at 15Hz during a given epoch
-        - channels:  1D Array of string, Cx1 where C is the name of each channel by electrode
-        eeg: array of float, C x S where C is the number of channels and 
-        S is the number of samples in a session
-        - channels_to_plot: list
-            list of channel indices to plot, default is ''
-        - subject: Int
-            Subject number that is of interest default is ''
-        
-        Returns:
-        - spectrum_db_12Hz: list of elements per number of channels_to_plot
-            each channel holds an 1D array of float: Px1 where P is the mean power spectrum of 12Hz trials in decibels
-        - spectrum_db_15Hz: list of elements per number of channels_to_plot
-            each channel holds an 1D array of float: Px1 where P is the mean power spectrum of 15Hz trials in decibels
-    
-    """
-   
-    # Initialize variables to store the mean power spectra
-    spectrum_db_12Hz = []
-    spectrum_db_15Hz = []
-    
-    # Iterate over each channel to plot
-    for _, channel_index in enumerate(channels_to_plot):
-
-        # Initialize variables to store the power spectra for 12Hz and 15Hz trials
-        power_12Hz = []
-        power_15Hz = []
-
-        # Iterate over each trial
-        for frequency_index in range(eeg_epochs_fft.shape[0]):
-            # Calculate absolute value of the spectrum
-            spectrum_abs = np.abs(eeg_epochs_fft[frequency_index, channel_index, :])
-
-            # Calculate power by squaring the spectrum
-            power = spectrum_abs ** 2
-
-            # Append power spectra for 12Hz and 15Hz trials
-            if is_trial_15Hz[frequency_index]:
-                power_15Hz.append(power)
-            else:
-                power_12Hz.append(power)
-
-        # Take the mean across trials
-        # mean_power_12Hz = np.mean(power_12Hz, axis=0)
-        # mean_power_15Hz = np.mean(power_15Hz, axis=0)
-
-        # Normalize the power spectra
-        # max_power = np.max([mean_power_12Hz, mean_power_15Hz])
-        # mean_power_12Hz_norm = mean_power_12Hz / max_power
-        # mean_power_15Hz_norm = mean_power_15Hz / max_power
-
-        # Convert to decibel units
-        spectrum_db_12Hz.append(10 * np.log10(power_12Hz))
-        spectrum_db_15Hz.append(10 * np.log10(power_15Hz))       
-
-    spectrum_db_12Hz = np.array(spectrum_db_12Hz)
-    spectrum_db_15Hz = np.array(spectrum_db_15Hz)
-    spectrum_db_12Hz = spectrum_db_12Hz.squeeze(axis=0)
-    spectrum_db_15Hz = spectrum_db_15Hz.squeeze(axis=0)
-    return spectrum_db_12Hz, spectrum_db_15Hz

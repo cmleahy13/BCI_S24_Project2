@@ -22,8 +22,7 @@ Useful abbreviations:
 # import packages
 import numpy as np
 from matplotlib import pyplot as plt
-from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, plot_power_spectrum, get_power_spectrum
-from filter_ssvep_data import make_bandpass_filter, filter_data, get_envelope
+from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
 
 #%% Part A: Generate Predictions
 
@@ -32,79 +31,62 @@ from filter_ssvep_data import make_bandpass_filter, filter_data, get_envelope
     TODO:
         - frequency dynamic coding
             - find frequencies if not explicitly given (i.e. no event_types) -- this is choosing the closest frequencies if none given
-                - basically how we'd go about finding the stimuli if only EEG data were given
-            - possibly look at an occipital channel power spectrum, take two highest-power frequencies (and/or their harmonics with the exception of the powerline artifact) and use those?
-        - make channel inputs more dynamic?
-            - should user have option to evaluate multiple channels at one time? lab suggests otherwise
+            - take two highest-power frequencies (and/or their harmonics with the exception of the powerline artifact)?
+        - make sure epoch start and end times are valid
+            - from epoch_ssvep_data() in import_ssvep_data.py
+            - works with separate times, but want to make sure the epochs aren't strictly limited to the events
+                - want to check ability to predict accurately with shorter epochs
         - Docstrings
 
 """
 
 def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=20):
     
-    # extract necessary data
+    # Extract necessary data
     channels = list(data['channels']) # convert to list
     fs = data['fs']
     event_types = data['event_types']
     
-    # find the frequencies of interest
+    # Find the frequencies of interest
     frequencies = np.unique(event_types) # gets the different stimulus frequencies
     low_frequency, high_frequency = frequencies # assuming 2 stimuli
     low = int(low_frequency[:2]) # gets the integer value of the frequency
     high = int(high_frequency[:2]) # gets the integer value of the frequency
     
-    # epoch the data
-    # TODO: If using different start and end times, it breaks.
-    eeg_epochs, _, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time, eeg_data=None, stimulus_frequency=high_frequency) # truth_labels will contain True if epoch is the higher stimulus frequency
-
-    # take the FFT data of the epochs
+    # Epoch the data
+    eeg_epochs, epoch_times, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time, eeg_data=None, stimulus_frequency=high_frequency) # truth_labels contains True if epoch is the higher stimulus frequency
+    
+    # Take the FFT data of the epochs
     eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)
     
-    # find the indices of the frequencies of the stimuli
-    # equation derived from the relationship of FFT to time domain
+    # Find stimuli frequencies indices based on relationship of FFT to time domain
     low_frequency_index = int(((len(fft_frequencies)-1)*2/fs)*low)
     high_frequency_index = int(((len(fft_frequencies)-1)*2/fs)*high)
     
-    # calculate the power
+    # Calculate the power (dB)
     power = (np.abs(eeg_epochs_fft[:,:,:]))**2 # calculate power for each frequency at each electrode
+    power_in_dB = 10*np.log10(power) # convert to dB
     
-    # get channel index for electrode of interest
+    # Get channel index for electrode of interest
     channel_index = channels.index(channel)
     
-    # Another way of calculating it?
-    spec12_hz, spec15_hz = get_power_spectrum(eeg_epochs_fft, truth_labels, [channel_index])
-    predict = np.concatenate((spec12_hz, spec15_hz), axis=0)
-    
-    # declare empty arrays to contain prediction data
+    # Declare empty array to contain prediction labels
     predicted_labels = np.empty(truth_labels.shape, dtype=bool)
     
-    # set threshold for comparison
+    # Set threshold for comparison
     threshold = 0
     
-    for epoch_index in range(len(truth_labels)):
+    # Create and compare predictions
+    for epoch_index in range(power_in_dB.shape[0]):
             
-        # generate predictor
-        predictor = power[epoch_index, channel_index, high_frequency_index] - power[epoch_index, channel_index, low_frequency_index]
-        
-        predictor_2 = predict[epoch_index, high_frequency_index] - predict[epoch_index, low_frequency_index]
-        
-        # print(predictor, predictor_2)
-
-        # print(power.shape)
-        # compare predictor to threshold
-        if predictor_2 > threshold:
-            predicted_labels[epoch_index] = True
-        else:
-            predicted_labels[epoch_index] = False
-            
-        # print(predicted_labels)
-        
+        # Generate predictor
+        predictor = power_in_dB[epoch_index][channel_index][high_frequency_index] - power_in_dB[epoch_index][channel_index][low_frequency_index]
+    
+        # Compare predictor to threshold
         if predictor > threshold:
             predicted_labels[epoch_index] = True
         else:
             predicted_labels[epoch_index] = False
-            
-        # print(predicted_labels)
     
     return predicted_labels, truth_labels
 
@@ -113,28 +95,24 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
 """
 
     TODO:
-        - is epoch timing info really only the epoch count? 
-            - epoch start and end times affect this variable
-            - ITR_trial does look like it matches up with graphic in class for 2 classes
         - double check that trials_per_second should be fs
-        - building off of part A - if it is decided that multiple channels can be evaluated, should we change it so that it's assumed that that is accounted for here as well?
         - Docstrings
 
 """
 
 def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_count=2):
     
-    # get timing parameters
+    # Get timing parameters
     trials_per_second = data['fs'] # sampling frequency
     epoch_count = len(truth_labels) # same as predicted_labels
     
-    # assign counters for confusion matrix values
+    # Assign counters for confusion matrix values
     TP = 0 # true positive initial count
     TN = 0 # true negative initial count
     FP = 0 # false positive initial count
     FN = 0 # false negative initial count
     
-    # compare the truth label to the predicted label for each epoch
+    # Compare the truth label to the predicted label for each epoch
     for epoch_index in range(epoch_count):
         
         if (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==True):
@@ -145,114 +123,99 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
             FP += 1 # add to false positive count
         elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==True):
             FN += 1 # add to false negative count
- 
-    # calculate accuracy
-    accuracy = (TP+TN)/(epoch_count)
-    
-    # Calculate ITR.
-    inverse_acc = 1 - accuracy
-    class_count_neg = classes_count - 1
-    
-    # Accounting for 100% accuracy by implementing small noise
-    if inverse_acc == 0:
-        inverse_acc = 0.0001
         
-    ITR_trial = np.log2(classes_count) + accuracy * np.log2(accuracy) + (inverse_acc) * np.log2(inverse_acc/class_count_neg) # bits/epoch
+    # Calculate accuracy
+    accuracy = (TP+TN)/epoch_count
     
+    # Temporarily rename variables for readability in ITR calculation
+    P = 0.99999 if accuracy == 1.0 else accuracy # handles mathematical error in ITR calculation
+    N = classes_count
+    
+    # Calculate ITR
+    ITR_trial = np.log2(N) + P*np.log2(P) + (1-P)*np.log2((1-P)/(N-1)) # bits/epoch
     ITR_time = ITR_trial * trials_per_second # bits/second
     
     return accuracy, ITR_time
 
 #%% Part C: Loop Through Epoch Limits
 
-"""
-
-    - Loop to test set of epoch start/end times
-    - Epoch data, calculate FFT, predict, calculate figures of merit
-    - Allow any possible start/end time
-
-"""
-def calculate_multiple_figures_of_merit(data, start_times, end_times, channel):
+def figures_of_merit_over_epochs(data, start_times, end_times, channel):
     
+    # Declare list to store label data and figures of merit for each epoch
     figures_of_merit = []
     
+    # Perform calculations for each set of valid pairs
     for start in start_times:
-        for end in end_times:
-            if start < end:  # Check if it is a valid start, end time
-                temp_start_end_time_list = []
-                
-                # Generate tuple to times for plotting purposes
-                times_tuple = (start, end)
-                temp_start_end_time_list.append(times_tuple)
-            
-                # Generate Predictions
-                predicted_labels, truth_labels = generate_predictions(data, channel=channel, epoch_start_time=start, epoch_end_time=end)
-                labels_tuple = (predicted_labels, truth_labels)
-                temp_start_end_time_list.append(labels_tuple)
-                
-                # Generate Accuracy and ITR times
-                accuracy, ITR_time = calculate_figures_of_merit(data, predicted_labels, truth_labels)
-                merit_values_tuple = (accuracy, ITR_time)
-                temp_start_end_time_list.append(merit_values_tuple)
-                
-                # Create Data Structure to hold all figures of merit for valid star-end times
-                figures_of_merit.append(temp_start_end_time_list)
-            else:
-                print(f"Start time {start}s and End time {end}s are not a possible combination")
         
-    # figures_of_merit = np.array(figures_of_merit)
-    
+        for end in end_times:
+            
+            if start < end:  # check for validity of pair
+                
+                # Predictions
+                predicted_labels, truth_labels = generate_predictions(data, channel, epoch_start_time=start, epoch_end_time=end)
+                
+                # Accuracy and ITR times
+                accuracy, ITR_time = calculate_figures_of_merit(data, predicted_labels, truth_labels)
+                merit_values = (accuracy, ITR_time) # tuple containing the accuracy and ITR (bits per second) for the labels
+                
+                # Update list with the merit values for the epoch
+                figures_of_merit.append(merit_values)
+            
+            else:
+                print(f"Start time {start}s and end time {end}s are not a possible combination")
+                figures_of_merit.append([0,0])
+     
+    # Convert to an array
+    figures_of_merit = np.array(figures_of_merit)
+                
     return figures_of_merit
 
 #%% Part D: Plot Results
 
-"""
+def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, subject):
 
-    - Generate pseudocolor plots to evalute accuracy, ITR for epochs
-    - Allow any possible start/end time
-    - Run code for both subjects
-
-"""
-def plot_figures_of_merit(figures_of_merit, start_times, end_times):
-
-    total_accuracies = []
-    total_ITR_time = []
-    
-    for figures in figures_of_merit:
-        # start, end = figures[0]
-        # predicted_labels, truth_labels = figures[1]
-        accuracy, ITR_time = figures[2]
-        print(accuracy)
-        total_ITR_time.append(ITR_time)
-        total_accuracies.append(accuracy)
-        
-    fig, ax = plt.subplots(1, 2, figsize=(15, 8), sharex=True, sharey=True)
-
+    # Convert start and end times lists to arrays for plotting
     start_times = np.array(start_times)
-    end_times = np.array(end_times)
+    end_times = np.array(end_times) 
     
-    x, y = np.meshgrid(end_times, start_times)
+    start_times_count = len(start_times)
+    end_times_count = len(end_times)
+
+    # Declare lists to contain figures of merit for use in plotting
+    all_accuracies = []
+    all_ITR_time = []
     
-    cols = len(start_times)
-    rows = len(end_times)
-    # x = np.array([start_times[0]] + end_times)  # Add start time of first block to cover the entire range
-    # y = np.array([start_times[0]] + end_times)  # Add start time of first block to cover the entire range
-    # x, y = np.meshgrid(x, y)
-    
-    total_accuracies = np.array(total_accuracies)
-    total_ITR_time = np.array(total_ITR_time)
-    total_ITR_time = total_ITR_time.reshape(rows, cols)
-    total_accuracies = total_accuracies.reshape(rows, cols)
-    print(total_accuracies)
-    # TODO: Z is a test. total_accuracies is just not correct
-    Z = np.random.rand(rows,cols)
-    ax[0].pcolor(x, y, Z, cmap='viridis')
-    ax[1].pcolor(x, y, total_accuracies, cmap='viridis')
-    # ax[1].pcolor(x, y, total_ITR_time, cmap='viridis')
-    
-    
-    plt.savefig(f"plots/test.png")
+    # Unload data from figures of merit to plot
+    for values in  figures_of_merit:
         
+        # Get figures of merit from the array
+        accuracy = values[0] # first value in tuple is accuracy
+        ITR_time = values[1] # second value in tuple is ITR
+        
+        # Update lists
+        all_accuracies.append(accuracy)
+        all_ITR_time.append(ITR_time)
+    
+    # Initialize figure
+    fig, ax = plt.subplots(1, 2, figsize=(15, 8), sharex=True, sharey=True)
+    
+    # Update start and end times as grid
+    end_times_grid, start_times_grid = np.meshgrid(end_times, start_times)
+    
+    # Convert lists to arrays
+    all_accuracies = np.array(all_accuracies)
+    all_ITR_time = np.array(all_ITR_time)
+    
+    # Reshape arrays to match grid shape
+    all_accuracies = all_accuracies.reshape(end_times_count, start_times_count)
+    all_ITR_time =all_ITR_time.reshape(end_times_count, start_times_count)
+    
+    # Plot the figures of merit over epoch lengths
+    ax[0].pcolor(end_times_grid, start_times_grid, all_accuracies, cmap='viridis')
+    ax[1].pcolor(end_times_grid, start_times_grid, all_ITR_time, cmap='viridis')
+    
+    
+    plt.savefig(f"subject_{subject}_channel_{channel}_figures_of_merit.png")
 
 #%% Part E: Create a Predictor Histogram
 

@@ -8,34 +8,48 @@ Created on Thu Mar 28 19:36:44 2024
 
 # import packages
 from import_ssvep_data import load_ssvep_data
-from predict_ssvep_data import generate_predictions, calculate_figures_of_merit, calculate_multiple_figures_of_merit, plot_figures_of_merit
+from predict_ssvep_data import generate_predictions, calculate_figures_of_merit, figures_of_merit_over_epochs, plot_figures_of_merit
 
 #%% Load the Data
 
-# load the SSVEP data for subject 1
+# Load the SSVEP data for subject 1
 data_s1 = load_ssvep_data(subject=1, data_directory='SsvepData/')
 
-# load the SSVEP data for subject 2
+# Load the SSVEP data for subject 2
 data_s2 = load_ssvep_data(subject=2, data_directory='SsvepData/')
 
 #%% Part A: Generate Predictions
 
-# generate predictions for subject 1, channel Oz
-# predicted_labels_s1, truth_labels_s1 = generate_predictions(data=data_s1, channel='Oz', epoch_start_time=0, epoch_end_time=20)
+# Generate predictions for subject 1, channel Oz
+predicted_labels_s1, truth_labels_s1 = generate_predictions(data=data_s1, channel='Oz', epoch_start_time=0, epoch_end_time=10)
 
-# generate predictions for subject 2, channel Oz
-# predicted_labels_s2, truth_labels_s2 = generate_predictions(data=data_s2, channel='Oz', epoch_start_time=0, epoch_end_time=20)
+# Generate predictions for subject 2, channel Oz
+predicted_labels_s2, truth_labels_s2 = generate_predictions(data=data_s2, channel='Oz', epoch_start_time=0, epoch_end_time=10)
 
 #%% Part B: Calculate Accuracy and ITR
 
-# calculate figures of merit for subject 1, channel Oz
-# accuracy_s1, ITR_time_s1 = calculate_figures_of_merit(data_s1, predicted_labels_s1, truth_labels_s1, classes_count=2)
+# Calculate figures of merit for subject 1, channel Oz
+accuracy_s1, ITR_time_s1 = calculate_figures_of_merit(data_s1, predicted_labels_s1, truth_labels_s1, classes_count=2)
 
-# calculate figures of merit for subject 2, channel Oz
-# accuracy_s2, ITR_time_s2 = calculate_figures_of_merit(data_s2, predicted_labels_s2, truth_labels_s2, classes_count=2)
+# Calculate figures of merit for subject 2, channel Oz
+accuracy_s2, ITR_time_s2 = calculate_figures_of_merit(data_s2, predicted_labels_s2, truth_labels_s2, classes_count=2)
 
-# TODO: fix problem for non-valid times when plotting
-start_times = [0, 3, 5, 9, 11, 15, 16]
-end_times   = [17, 19, 20, 22, 25, 30, 33]
-figures_merit = calculate_multiple_figures_of_merit(data_s1, start_times, end_times, channel='Pz')
-plot_figures_of_merit(figures_merit, start_times, end_times)
+#%% Part C: Loop Through Epoch Limits
+
+# Create arrays for start and end times
+start_times = [0, 10, 20]
+end_times = [10, 20, 50]
+
+# Calculate figures of merit for various epochs for subject 1, channel Oz
+figures_of_merit_s1 = figures_of_merit_over_epochs(data=data_s1, start_times=start_times, end_times=end_times, channel='Oz')
+
+# Calculate figures of merit for various epochs for subject 2, channel Oz
+#figures_of_merit_s2 = figures_of_merit_over_epochs(data=data_s2, start_times=start_times, end_times=end_times, channel='Oz')
+
+#%% Part D: Plot Results
+
+# Plot figures of merit for various epochs for subject 1, channel Oz
+plot_figures_of_merit(figures_of_merit_s1, start_times=start_times, end_times=end_times, channel='Oz', subject=1)
+
+# Plot figures of merit for various epochs for subject 2, channel Oz
+#plot_figures_of_merit(figures_of_merit_s2, start_times=start_times, end_times=end_times, channel='Oz', subject=2)
