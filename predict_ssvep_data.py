@@ -142,7 +142,7 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
 """
 
     TODO:
-        - test a bunch of different epoch lengths to ensure that accuracy, etc. changes
+        - EVERY EPOCH IS RETURNING THE SAME VALUE FOR A GIVEN CHANNEL!!!
 
 """
 
@@ -170,7 +170,7 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
             
             else:
                 print(f"Start time {start}s and end time {end}s are not a possible combination")
-                figures_of_merit.append([0,0])
+                figures_of_merit.append([0.5,0]) # placeholder value for invalid start-end combinations should be 50% accuracy (guessing), 0 ITR (no information transferred) 
      
     # Convert to an array
     figures_of_merit = np.array(figures_of_merit)
