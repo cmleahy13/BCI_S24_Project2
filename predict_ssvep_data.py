@@ -178,7 +178,7 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
             
             print(f'start {start} end {end}')
             
-            if end << start: # check to make sure valid start and end time
+            if end < start: # check to make sure valid start and end time
                
                 merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
                 figures_of_merit.append(merit_values) 
@@ -197,6 +197,8 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
                 
                 # Predictions
                 predicted_labels, truth_labels = generate_predictions(data, channel, epoch_start_time=start, epoch_end_time=end)
+                
+                print(predicted_labels, truth_labels)
                 
                 # Accuracy and ITR times
                 accuracy, ITR_time = calculate_figures_of_merit(data, predicted_labels, truth_labels)
