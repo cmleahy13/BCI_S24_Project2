@@ -32,10 +32,8 @@ from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
         - frequency dynamic coding
             - find frequencies if not explicitly given (i.e. no event_types) -- this is choosing the closest frequencies if none given
             - take two highest-power frequencies (and/or their harmonics with the exception of the powerline artifact)?
-        - make sure epoch start and end times are valid
-            - from epoch_ssvep_data() in import_ssvep_data.py
-            - works with separate times, but want to make sure the epochs aren't strictly limited to the events
-                - want to check ability to predict accurately with shorter epochs
+        - ignore when an index of power=0
+            - gives runtime error but maintains functionality (proceeds to run after error)
         - Docstrings
 
 """
@@ -164,12 +162,17 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
         - get a runtime error related to the call of generate_predictions
             - power conversion to dB is a divide by zero error
             - code continues to run through, likely accounted for elsewhere but not immediately upon occurrence
+        - at least for channel Oz, there is one epoch (2s, 3s) that is worse that accuracy=0.5 (0.45, worse than guessing)
+            - when accuracy is this low, should it be replaced with 0.5 as the minimum placeholder value since this is used for the trials that are not valid?
+        - check ITR calculation - not sure it should be so high when accuracy-->1
+            - check graph in lab guide
+        - Docstrings
 
 """
 
 def figures_of_merit_over_epochs(data, start_times, end_times, channel):
     
-    # Declare list to store label data and figures of merit for each epoch
+    # Declare list to store label data and figures of merit and labels for each epoch
     figures_of_merit = []
     
     # Perform calculations for each set of valid pairs
@@ -177,35 +180,31 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
         
         for end in end_times:
             
+            # Update the list containing the figures of merit
             if end < start: # check to make sure valid start and end time
                
-                merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
-                figures_of_merit.append(merit_values) 
+                merit_values = (0.5,0.00) # placeholder value for invalid start/end
+                figures_of_merit.append(merit_values) # update list with placeholders
             
-            elif (end - start) > 20: # check to make sure times will be within the trial range
+            elif ((end - start) > 20) or ((end - start) == 0): # check to make sure times will be within the trial range
                 
-                merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
+                merit_values = (0.5,0.00) # placeholder value for invalid start/end
+                figures_of_merit.append(merit_values) # update list with placeholders
                 
-                # Update list with the placeholder values for the epoch
-                figures_of_merit.append(merit_values)
-                
-            elif (end - start) == 0: # check to make sure times will be within the trial range
-            
-                merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
-                
-                # Update list with the placeholder values for the epoch
-                figures_of_merit.append(merit_values)
+            elif start >= 20: # check that the start time is before end of trial
+                merit_values = (0.5,0.00) # placeholder value for invalid start/end
+                figures_of_merit.append(merit_values) # update list with placeholders
 
-            else:
+            else: # times are valid
                 
                 # Predictions
                 predicted_labels, truth_labels = generate_predictions(data, channel, epoch_start_time=start, epoch_end_time=end)
                 
                 # Accuracy and ITR times
                 accuracy, ITR_time = calculate_figures_of_merit(data, predicted_labels, truth_labels)
-                merit_values = (accuracy, ITR_time) # tuple containing the accuracy and ITR (bits per second) for the labels
+                merit_values = (accuracy, ITR_time) # tuple containing the accuracy and ITR (bits per second)
                 
-                # Update list with the merit values for the epoch
+                # Update list
                 figures_of_merit.append(merit_values)
      
     # Convert to an array
@@ -219,6 +218,7 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
 
     TODO:
         - change scale of colorbar
+        - Docstrings
 
 """
 
@@ -286,16 +286,50 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     figure.suptitle(f'SSVEP Subject {subject}, Channel {channel}')
     figure.colorbar(mappable=None, ax=figure_of_merit_plot[0], label='% Correct')
     figure.colorbar(mappable=None, ax=figure_of_merit_plot[1], label='ITR (bits/sec)')
+    # need to add a scale for color bar
+        # (50, 100) for accuracy
+        # (0, all_ITR_time.max()) for ITR
     figure.tight_layout()
     
+    # Save figure
     plt.savefig(f"subject_{subject}_channel_{channel}_figures_of_merit.png")
 
 #%% Part E: Create a Predictor Histogram
 
 """
 
-    - Select epoch start/end time that produces high ITR but doesn't have perfect accuracy
-    - Calculate predictor (amp15-amp12) variable from given times for each epoch, plot as predictor histogram
-    - Use to place threshold
+    TODO:
+        - do we want to plot over a span of epochs?
+        - may run into issue with the predicted_labels if the epoch is invalid
+            - handled for accuracy and ITR with placeholders --> can we do the same thing here by setting whatever value will be plotted to None or 0 (i.e. have it not contribute to the density)?
+        - Docstrings
 
 """
+
+def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz', subject=1, threshold=0):
+    
+    # Create array of intersection start and end times
+    start_times = np.arange(epoch_start_time, epoch_end_time)
+    end_times = np.arange(epoch_start_time, epoch_end_time)
+    
+    # Create empty lists to store data to be plotted
+    predictions = []
+    truths = []
+    
+    # Loop through the epochs
+    for start in start_times:
+        
+        for end in end_times:
+    
+            # Get the predictions for the epoch
+            predicted_labels, truth_labels = generate_predictions(data, channel, start, end)
+            
+            # Update lists
+            predictions.append(predicted_labels)
+            truths.append(truth_labels)
+    
+    # Convert lists to arrays
+    predictions = np.array(predictions)
+    truths = np.array(truths)
+    
+

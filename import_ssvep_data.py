@@ -210,17 +210,22 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     event_types = data_dict['event_types']
     
     # Epoch the data
-    if epoch_end_time < epoch_start_time: # check to make sure valid start and end time
+    if epoch_end_time < epoch_start_time: # check for valid start and end time
        
         print(f'Start {epoch_start_time}s and end {epoch_end_time}s not a valid combination.')
         eeg_epochs = None
     
-    elif ((epoch_end_time - epoch_start_time) > 20) or ((epoch_end_time - epoch_start_time) == 0): # check to make sure times will be within the trial range
+    elif ((epoch_end_time - epoch_start_time) > 20) or ((epoch_end_time - epoch_start_time) == 0): # check that times will be within the trial range
         
         print('Trial length must be between 0 (exclusive) and 20 (inclusive) seconds.')
         eeg_epochs = None
+    
+    elif epoch_start_time >= 20: # check that the start time is before end of trial
         
-    else:
+        print('Start time must be before 20s.')
+        eeg_epochs = None
+        
+    else: # times are valid
         
         # Calculate the amount of time per each epoch
         time_per_epoch = epoch_end_time - epoch_start_time
