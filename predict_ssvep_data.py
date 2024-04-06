@@ -161,8 +161,9 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
 """
 
     TODO:
-        - error occurs during generate predictions
-        - want to calculate the predictions after looping and not during?
+        - get a runtime error related to the call of generate_predictions
+            - power conversion to dB is a divide by zero error
+            - code continues to run through, likely accounted for elsewhere but not immediately upon occurrence
 
 """
 
@@ -176,8 +177,6 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
         
         for end in end_times:
             
-            print(f'start {start} end {end}')
-            
             if end < start: # check to make sure valid start and end time
                
                 merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
@@ -186,11 +185,15 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
             elif (end - start) > 20: # check to make sure times will be within the trial range
                 
                 merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
+                
+                # Update list with the placeholder values for the epoch
                 figures_of_merit.append(merit_values)
                 
             elif (end - start) == 0: # check to make sure times will be within the trial range
             
                 merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
+                
+                # Update list with the placeholder values for the epoch
                 figures_of_merit.append(merit_values)
 
             else:
@@ -198,15 +201,12 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
                 # Predictions
                 predicted_labels, truth_labels = generate_predictions(data, channel, epoch_start_time=start, epoch_end_time=end)
                 
-                print(predicted_labels, truth_labels)
-                
                 # Accuracy and ITR times
                 accuracy, ITR_time = calculate_figures_of_merit(data, predicted_labels, truth_labels)
                 merit_values = (accuracy, ITR_time) # tuple containing the accuracy and ITR (bits per second) for the labels
                 
                 # Update list with the merit values for the epoch
                 figures_of_merit.append(merit_values)
-                print(merit_values)
      
     # Convert to an array
     figures_of_merit = np.array(figures_of_merit)
@@ -218,8 +218,7 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
 """
 
     TODO:
-        - add colorbar (https://stackoverflow.com/questions/23876588/matplotlib-colorbar-in-each-subplot)
-        - yticks not showing for ITR subplot
+        - change scale of colorbar
 
 """
 
@@ -274,6 +273,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     figure_of_merit_plot[0].set_ylim(0, start_times.max())
     figure_of_merit_plot[0].set_yticks(np.arange(start_times.min(), start_times.max(), 2.5))
     
+    
     # Format ITR subplot
     figure_of_merit_plot[1].grid()
     figure_of_merit_plot[1].set_title('Information Transfer Rate')
@@ -284,6 +284,8 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     
     # Format whole figure
     figure.suptitle(f'SSVEP Subject {subject}, Channel {channel}')
+    figure.colorbar(mappable=None, ax=figure_of_merit_plot[0], label='% Correct')
+    figure.colorbar(mappable=None, ax=figure_of_merit_plot[1], label='ITR (bits/sec)')
     figure.tight_layout()
     
     plt.savefig(f"subject_{subject}_channel_{channel}_figures_of_merit.png")
