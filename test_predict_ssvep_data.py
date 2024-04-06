@@ -38,8 +38,8 @@ accuracy_s1, ITR_time_s1 = calculate_figures_of_merit(data_s1, predicted_labels_
 #%% Part C: Loop Through Epoch Limits
 
 # Create arrays for start and end times
-start_times = np.arange(0,20)
-end_times = np.arange(0,20)
+start_times = np.arange(0,5)
+end_times = np.arange(0,5)
 
 # Calculate figures of merit for various epochs for subject 1, channel Oz
 figures_of_merit_s1 = figures_of_merit_over_epochs(data=data_s1, start_times=start_times, end_times=end_times, channel='Oz')

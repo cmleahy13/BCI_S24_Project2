@@ -215,9 +215,9 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
         print(f'Start {epoch_start_time}s and end {epoch_end_time}s not a valid combination.')
         eeg_epochs = None
     
-    elif (epoch_end_time - epoch_start_time) > 20: # check to make sure times will be within the trial range
+    elif ((epoch_end_time - epoch_start_time) > 20) or ((epoch_end_time - epoch_start_time) == 0): # check to make sure times will be within the trial range
         
-        print('Trial length is a maximum of 20 seconds. Invalid start and end times.')
+        print('Trial length must be between 0 (exclusive) and 20 (inclusive) seconds.')
         eeg_epochs = None
         
     else:

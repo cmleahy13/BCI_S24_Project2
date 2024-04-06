@@ -57,36 +57,46 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
     eeg_epochs, epoch_times, truth_labels = epoch_ssvep_data(data, epoch_start_time, epoch_end_time, eeg_data=None, stimulus_frequency=high_frequency) # truth_labels contains True if epoch is the higher stimulus frequency
     
     # Take the FFT data of the epochs
-    eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)
+    if eeg_epochs is None: # avoid performing FFT on invalid times
+        
+        # Declare variables for return purposes but give no value
+        eeg_epochs_fft = None
+        fft_frequencies = None
+        predicted_labels = None
     
-    # Find stimuli frequencies indices based on relationship of FFT to time domain
-    low_frequency_index = int(((len(fft_frequencies)-1)*2/fs)*low)
-    high_frequency_index = int(((len(fft_frequencies)-1)*2/fs)*high)
+    else:
+        
+        # Take FFT of valid epochs
+        eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)
     
-    # Calculate the power (dB)
-    power = (np.abs(eeg_epochs_fft[:,:,:]))**2 # calculate power for each frequency at each electrode
-    power_in_dB = 10*np.log10(power) # convert to dB
-    
-    # Get channel index for electrode of interest
-    channel_index = channels.index(channel)
-    
-    # Declare empty array to contain prediction labels
-    predicted_labels = np.empty(truth_labels.shape, dtype=bool)
-    
-    # Set threshold for comparison
-    threshold = 0
-    
-    # Create and compare predictions
-    for epoch_index in range(power_in_dB.shape[0]):
-            
-        # Generate predictor
-        predictor = power_in_dB[epoch_index][channel_index][high_frequency_index] - power_in_dB[epoch_index][channel_index][low_frequency_index]
-    
-        # Compare predictor to threshold
-        if predictor > threshold:
-            predicted_labels[epoch_index] = True
-        else:
-            predicted_labels[epoch_index] = False
+        # Find stimuli frequencies indices based on relationship of FFT to time domain
+        low_frequency_index = int(((len(fft_frequencies)-1)*2/fs)*low)
+        high_frequency_index = int(((len(fft_frequencies)-1)*2/fs)*high)
+        
+        # Calculate the power (dB)
+        power = (np.abs(eeg_epochs_fft[:,:,:]))**2 # calculate power for each frequency at each electrode
+        power_in_dB = 10*np.log10(power) # convert to dB
+        
+        # Get channel index for electrode of interest
+        channel_index = channels.index(channel)
+        
+        # Declare empty array to contain prediction labels
+        predicted_labels = np.empty(truth_labels.shape, dtype=bool)
+        
+        # Set threshold for comparison
+        threshold = 0
+        
+        # Create and compare predictions
+        for epoch_index in range(power_in_dB.shape[0]):
+                
+            # Generate predictor
+            predictor = power_in_dB[epoch_index][channel_index][high_frequency_index] - power_in_dB[epoch_index][channel_index][low_frequency_index]
+        
+            # Compare predictor to threshold
+            if predictor > threshold:
+                predicted_labels[epoch_index] = True
+            else:
+                predicted_labels[epoch_index] = False
     
     return predicted_labels, truth_labels
 
@@ -112,28 +122,37 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
     FP = 0 # false positive initial count
     FN = 0 # false negative initial count
     
-    # Compare the truth label to the predicted label for each epoch
-    for epoch_index in range(epoch_count):
+    # Carry through errors
+    if predicted_labels is None:
         
-        if (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==True):
-            TP += 1 # add to true positive count
-        elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==False):
-            TN += 1 # add to true negative count
-        elif (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==False):
-            FP += 1 # add to false positive count
-        elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==True):
-            FN += 1 # add to false negative count
+        # Default accuracy to 0.5, ITR_time to 0.00
+        accuracy = 0.5
+        ITR_time = 0.00
         
-    # Calculate accuracy
-    accuracy = (TP+TN)/epoch_count
+    else:
     
-    # Temporarily rename variables for readability in ITR calculation
-    P = 0.99999 if accuracy == 1.0 else accuracy # handles mathematical error in ITR calculation
-    N = classes_count
-    
-    # Calculate ITR
-    ITR_trial = np.log2(N) + P*np.log2(P) + (1-P)*np.log2((1-P)/(N-1)) # bits/epoch
-    ITR_time = ITR_trial * trials_per_second # bits/second
+        # Compare the truth label to the predicted label for each epoch
+        for epoch_index in range(epoch_count):
+            
+            if (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==True):
+                TP += 1 # add to true positive count
+            elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==False):
+                TN += 1 # add to true negative count
+            elif (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==False):
+                FP += 1 # add to false positive count
+            elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==True):
+                FN += 1 # add to false negative count
+        
+        # Calculate accuracy
+        accuracy = (TP+TN)/epoch_count
+        
+        # Temporarily rename/replace variables for readability in ITR calculation
+        P = 0.99999 if accuracy == 1.0 else accuracy
+        N = classes_count
+        
+        # Calculate ITR
+        ITR_trial = np.log2(N) + P*np.log2(P) + (1-P)*np.log2((1-P)/(N-1)) # bits/epoch
+        ITR_time = ITR_trial * trials_per_second # bits/second
     
     return accuracy, ITR_time
 
@@ -157,13 +176,22 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
         
         for end in end_times:
             
+            print(f'start {start} end {end}')
+            
             if end << start: # check to make sure valid start and end time
                
-                figures_of_merit.append([0.5,0]) # placeholder value for invalid start-end combinations should be 50% accuracy (guessing), 0 ITR (no information transferred)
+                merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
+                figures_of_merit.append(merit_values) 
             
-            elif (end - start) >> 20: # check to make sure times will be within the trial range
+            elif (end - start) > 20: # check to make sure times will be within the trial range
                 
-                figures_of_merit.append([0.5,0]) # placeholder value for invalid start-end combinations should be 50% accuracy (guessing), 0 ITR (no information transferred)
+                merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
+                figures_of_merit.append(merit_values)
+                
+            elif (end - start) == 0: # check to make sure times will be within the trial range
+            
+                merit_values = (0.5,0.00) # placeholder value for invalid start-end combinations should be 50% accuracy, 0 ITR
+                figures_of_merit.append(merit_values)
 
             else:
                 
@@ -176,6 +204,7 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
                 
                 # Update list with the merit values for the epoch
                 figures_of_merit.append(merit_values)
+                print(merit_values)
      
     # Convert to an array
     figures_of_merit = np.array(figures_of_merit)
