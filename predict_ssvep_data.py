@@ -384,7 +384,7 @@ def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz
     end_times = np.arange(epoch_start_time, epoch_end_time)
     
     # Get the figures of merit for each epoch
-    figures_of_merit, confusion_matrix_values = figures_of_merit_over_epochs(data, start_times, end_times, channel)
+    predictors, figures_of_merit, confusion_matrix_values = figures_of_merit_over_epochs(data, start_times, end_times, channel)
     
     # Plot the data
     # predictors is the x axis
