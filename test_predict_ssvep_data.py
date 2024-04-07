@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Mar 28 19:36:44 2024
+test_predict_ssvep_data.py
+
+This script serves as the test script for Project 2: SSVEP. Functions from both import_ssvep_data.py (Lab 3, edited) and predict_ssvep_data.py are called to produce a functional, meaningful script. First, the data are loaded into a dictionary containing features such as EEG voltages and stimulus frequencies. The predictions and figures of merit for a given epoch are then generated initially for one channel and a start/end time pair before being calculated for a variety of possible epochs. Once produced over the different epochs, these data are plotted.
+
+Useful abbreviations:
+    EEG: electroencephalography
+    SSVEP: steady-state visual evoked potentials
+    fs: sampling frequency
+    FFT: Fast Fourier Transform
+    FIR: Finite impulse response
+    IIR: Infinite impulse response
+    TP: True positive - predicted and truth both True (i.e. 15Hz)
+    TN: True negative - predicted and truth both False
+    FP: False positive - predicted True, truth False
+    FN: False negative - predicted False, truth True
+    ITR: Information transfer rate
 
 @author: Claire Leahy and Lute Lillo
 """
