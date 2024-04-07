@@ -44,7 +44,20 @@ from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
 """
 
 def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=20):
-
+    """
+        Definition:
+        ----------
+            
+        
+        Parameters:
+        ----------
+            - data (dict): the raw data dictionary,
+           
+            
+        Returns:
+        ----------
+            None
+    """
     # Extract necessary data
     channels = list(data['channels']) # convert to list
     fs = data['fs']
@@ -118,6 +131,20 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
 """
 
 def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_count=2):
+    """
+        Definition:
+        ----------
+            
+        
+        Parameters:
+        ----------
+            - data (dict): the raw data dictionary,
+           
+            
+        Returns:
+        ----------
+            None
+    """
     
     # Get timing parameters
     trials_per_second = data['fs'] # sampling frequency
@@ -183,6 +210,20 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
 """
 
 def figures_of_merit_over_epochs(data, start_times, end_times, channel):
+    """
+        Definition:
+        ----------
+            
+        
+        Parameters:
+        ----------
+            - data (dict): the raw data dictionary,
+           
+            
+        Returns:
+        ----------
+            None
+    """
     
     # Declare list to store label data and figures of merit and labels for each epoch
     figures_of_merit = []
@@ -235,7 +276,21 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
 """
 
 def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, subject):
-
+    """
+        Definition:
+        ----------
+            
+        
+        Parameters:
+        ----------
+            - data (dict): the raw data dictionary,
+           
+            
+        Returns:
+        ----------
+            None
+    """
+    
     # Convert start and end times lists to arrays for plotting
     start_times = np.array(start_times)
     end_times = np.array(end_times) 
@@ -319,6 +374,20 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
 """
 
 def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz', subject=1, threshold=0):
+    """
+        Definition:
+        ----------
+            
+        
+        Parameters:
+        ----------
+            - data (dict): the raw data dictionary,
+           
+            
+        Returns:
+        ----------
+            None
+    """
     
     # Create array of intersection start and end times
     start_times = np.arange(epoch_start_time, epoch_end_time)
