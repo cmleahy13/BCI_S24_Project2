@@ -186,7 +186,7 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, prediction_
             elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==True):
                 FN += 1 # add to false negative count
                 present.append(prediction_quantities[epoch_index])
-        
+
         # Calculate accuracy
         accuracy = (TP+TN)/epoch_count
         
@@ -234,21 +234,8 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
         for end in end_times:
             
             # Update the list containing the figures of merit
-            if end < start: # check to make sure valid start and end time
+            if (end < start) or (start >= 20) or ((end - start) > 20) or ((end - start) == 0): # check to make sure valid start and end time
                
-                # Update lists with placeholder values for invalid times
-                merit_values = (0.5,0.00)
-                figures_of_merit.append(merit_values)
-            
-            elif ((end - start) > 20) or ((end - start) == 0): # check to make sure times will be within the trial range
-                
-                # Update lists with placeholder values for invalid times
-                
-                merit_values = (0.5,0.00)
-                figures_of_merit.append(merit_values)
-                
-            elif start >= 20: # check that the start time is before end of trial
-                
                 # Update lists with placeholder values for invalid times
                 merit_values = (0.5,0.00)
                 figures_of_merit.append(merit_values)
@@ -322,7 +309,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     
     # Reshape arrays to match grid shape
     all_accuracies = all_accuracies.reshape(end_times_count, start_times_count)
-    all_ITR_time =all_ITR_time.reshape(end_times_count, start_times_count)
+    all_ITR_time = all_ITR_time.reshape(end_times_count, start_times_count)
     
     # Plot the figures of merit over epoch lengths
     figure_of_merit_plot[0].pcolor(end_times_grid, start_times_grid, all_accuracies, cmap='viridis')
@@ -369,9 +356,11 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
 
 """
 
-def plot_predictor_histogram(densities, channel='Oz', subject=1, threshold=0):
-            
+def plot_predictor_histogram(data, start_times, end_times, channel='Oz', subject=1, threshold=0):
+    
+    _, densities = figures_of_merit_over_epochs(data, start_times=start_times, end_times=end_times, channel='Oz')
     present, absent = densities
+    print(len(present), len(absent))
  
     """ Plot Present values """
     # Calculate mean and standard deviation
