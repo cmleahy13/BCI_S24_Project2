@@ -24,7 +24,7 @@ Useful abbreviations:
 # import packages
 import numpy as np
 from import_ssvep_data import load_ssvep_data
-from predict_ssvep_data import generate_predictions, calculate_figures_of_merit, figures_of_merit_over_epochs, plot_figures_of_merit
+from predict_ssvep_data import generate_predictions, calculate_figures_of_merit, figures_of_merit_over_epochs, plot_figures_of_merit, plot_predictor_histogram
 
 #%% Load the Data
 
@@ -37,15 +37,15 @@ data_s1 = load_ssvep_data(subject=1, data_directory='SsvepData/')
 #%% Part A: Generate Predictions
 
 # Generate predictions for subject 1, channel Oz
-predicted_labels_s1, truth_labels_s1 = generate_predictions(data=data_s1, channel='Oz', epoch_start_time=0, epoch_end_time=20)
+prediction_quantities_s1, predicted_labels_s1, truth_labels_s1 = generate_predictions(data=data_s1, channel='Oz', epoch_start_time=0, epoch_end_time=20)
 
 # Generate predictions for subject 2, channel Oz
-#predicted_labels_s2, truth_labels_s2 = generate_predictions(data=data_s2, channel='Oz', epoch_start_time=0, epoch_end_time=10)
+#prediction_quantities_s2, predicted_labels_s2, truth_labels_s2 = generate_predictions(data=data_s2, channel='Oz', epoch_start_time=0, epoch_end_time=10)
 
 #%% Part B: Calculate Accuracy and ITR
 
 # Calculate figures of merit for subject 1, channel Oz
-accuracy_s1, ITR_time_s1 = calculate_figures_of_merit(data_s1, predicted_labels_s1, truth_labels_s1, classes_count=2)
+accuracy_s1, ITR_time_s1, TP_s1, TN_s1, FP_s1, FN_s1 = calculate_figures_of_merit(data_s1, predicted_labels_s1, truth_labels_s1, classes_count=2)
 
 # Calculate figures of merit for subject 2, channel Oz
 #accuracy_s2, ITR_time_s2 = calculate_figures_of_merit(data_s2, predicted_labels_s2, truth_labels_s2, classes_count=2)
@@ -53,11 +53,11 @@ accuracy_s1, ITR_time_s1 = calculate_figures_of_merit(data_s1, predicted_labels_
 #%% Part C: Loop Through Epoch Limits
 
 # Create arrays for start and end times
-start_times = np.arange(0,20)
-end_times = np.arange(0,20)
+start_times = np.arange(0,5)
+end_times = np.arange(0,5)
 
 # Calculate figures of merit for various epochs for subject 1, channel Oz
-figures_of_merit_s1 = figures_of_merit_over_epochs(data=data_s1, start_times=start_times, end_times=end_times, channel='Oz')
+predictors_s1, figures_of_merit_s1, confusion_matrix_values_s1 = figures_of_merit_over_epochs(data=data_s1, start_times=start_times, end_times=end_times, channel='Oz')
 
 # Calculate figures of merit for various epochs for subject 2, channel Oz
 #figures_of_merit_s2 = figures_of_merit_over_epochs(data=data_s2, start_times=start_times, end_times=end_times, channel='Oz')
@@ -69,3 +69,12 @@ plot_figures_of_merit(figures_of_merit_s1, start_times=start_times, end_times=en
 
 # Plot figures of merit for various epochs for subject 2, channel Oz
 #plot_figures_of_merit(figures_of_merit_s2, start_times=start_times, end_times=end_times, channel='Oz', subject=2)
+
+#%% Part E: Create a Predictor Histogram
+
+# Plot predictor histogram for epoch range for subject 1, channel Oz
+plot_predictor_histogram(data_s1, epoch_start_time=0, epoch_end_time=5, channel='Oz', subject=1, threshold=0)
+
+# Plot predictor histogram for epoch range for subject 1, channel Oz
+#plot_predictor_histogram(data_s2, epoch_start_time=0, epoch_end_time=5, channel='Oz', subject=2, threshold=0)
+

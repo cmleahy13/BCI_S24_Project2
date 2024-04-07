@@ -39,25 +39,37 @@ from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
         - ignore when an index of power=0
             - gives runtime error but maintains functionality (proceeds to run after error)
             - temporarily using warnings.filterwarnings("ignore", category=RuntimeWarning) to avoid print to console --> likely want to figure out better solution to handle this case
-        - Docstrings
 
 """
 
 def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=20):
     """
-        Definition:
-        ----------
-            
-        
-        Parameters:
-        ----------
-            - data (dict): the raw data dictionary,
-           
-            
-        Returns:
-        ----------
-            None
+    Description
+    -----------
+    Function to generate predictions (quantitatively and qualitatively) about the frequency of the stimulus.
+
+    Parameters
+    ----------
+    data : dict, size F, where F is the number of fields (6)
+        Data from Python's MNE SSVEP dataset as a dictionary object, where the fields are relevant features of the data.
+    channel : str, optional
+        The electrode for which the labels will be generated. The default is 'Oz'.
+    epoch_start_time : int, optional
+        The relative time in seconds at which the epoch starts. The default is 0.
+    epoch_end_time : int, optional
+        The relative time in seconds at which the epoch ends. The default is 20.
+
+    Returns
+    -------
+    prediction_quantities: array of float, size Ex1 where is the number of epochs
+        An array containing the predictor quantities (higher frequency's power minus the lower frequency's power)
+    predicted_labels : array of bool, size Ex1 where E is the number of epochs
+        An array of boolean type that is True when the magnitude of the power for the higher frequency stimulus is greater than the power of the lower frequency stimulus for the epochs, False if the lower frequency stimulus is greater than the power of the higher frequency stimulus for the epoch.
+    truth_labels : array of bool, size Ex1 where E is the number of epochs
+        An array containing True if the epoch is actually the higher frequency stimulus, False if the epoch is an event at the lower frequency stimulus. (In other scripts, this variable may be known as is_trial_15Hz.)
+
     """
+
     # Extract necessary data
     channels = list(data['channels']) # convert to list
     fs = data['fs']
@@ -80,7 +92,7 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
         fft_frequencies = None
         predicted_labels = None
     
-    else:
+    else: # get data any valid sets
         
         # Take FFT of valid epochs
         eeg_epochs_fft, fft_frequencies = get_frequency_spectrum(eeg_epochs, fs)
@@ -99,8 +111,9 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
         # Get channel index for electrode of interest
         channel_index = channels.index(channel)
         
-        # Declare empty array to contain prediction labels
-        predicted_labels = np.empty(truth_labels.shape, dtype=bool)
+        # Declare empty array to contain prediction data
+        prediction_quantities = np.zeros(truth_labels.shape) # numerical values
+        predicted_labels = np.empty(truth_labels.shape, dtype=bool) # boolean labels
         
         # Set threshold for comparison
         threshold = 0
@@ -110,6 +123,9 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
                 
             # Generate predictor
             predictor = power_in_dB[epoch_index][channel_index][high_frequency_index] - power_in_dB[epoch_index][channel_index][low_frequency_index]
+            
+            # Update prediction_quantities with the predictor
+            prediction_quantities[epoch_index] = predictor
         
             # Compare predictor to threshold
             if predictor > threshold:
@@ -117,7 +133,7 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
             else:
                 predicted_labels[epoch_index] = False
     
-    return predicted_labels, truth_labels
+    return prediction_quantities, predicted_labels, truth_labels
 
 #%% Part B: Calculate Accuracy and ITR
 
@@ -131,20 +147,6 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
 """
 
 def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_count=2):
-    """
-        Definition:
-        ----------
-            
-        
-        Parameters:
-        ----------
-            - data (dict): the raw data dictionary,
-           
-            
-        Returns:
-        ----------
-            None
-    """
     
     # Get timing parameters
     trials_per_second = data['fs'] # sampling frequency
@@ -192,7 +194,7 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
         
         ITR_time = ITR_trial * trials_per_second # bits/second
     
-    return accuracy, ITR_time
+    return accuracy, ITR_time, TP, TN, FP, FN
 
 #%% Part C: Loop Through Epoch Limits
 
@@ -203,30 +205,21 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
             - power conversion to dB is a divide by zero error
             - code continues to run through, likely accounted for elsewhere but not immediately upon occurrence
             - suppressed warning in generate_predictions()
-        - at least for channel Oz, there is one epoch (2s, 3s) that is worse that accuracy=0.5 (0.45, worse than guessing)
+        - at least for channel Oz, there is one epoch (2s, 3s) that is worse than accuracy=0.5 (0.45, worse than guessing)
             - when accuracy is this low, should it be replaced with 0.5 as the minimum placeholder value since this is used for the trials that are not valid?
         - Docstrings
 
 """
 
 def figures_of_merit_over_epochs(data, start_times, end_times, channel):
-    """
-        Definition:
-        ----------
-            
-        
-        Parameters:
-        ----------
-            - data (dict): the raw data dictionary,
-           
-            
-        Returns:
-        ----------
-            None
-    """
     
-    # Declare list to store label data and figures of merit and labels for each epoch
+    # Epoch count to define size of placeholder predictor data for invalid cases
+    epoch_count = len(data['event_types'])
+    
+    # Declare list to store predictions and figures of merit for each epoch
+    predictors = []
     figures_of_merit = []
+    confusion_matrix_values = []
     
     # Perform calculations for each set of valid pairs
     for start in start_times:
@@ -236,34 +229,61 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
             # Update the list containing the figures of merit
             if end < start: # check to make sure valid start and end time
                
-                merit_values = (0.5,0.00) # placeholder value for invalid start/end
-                figures_of_merit.append(merit_values) # update list with placeholders
+                # Update lists with placeholder values for invalid times
+                prediction_quantities = np.zeros(epoch_count)
+                predictors.append(prediction_quantities)
+                
+                merit_values = (0.5,0.00)
+                figures_of_merit.append(merit_values)
+                
+                classifications = (0,0,0,0) 
+                confusion_matrix_values.append(classifications)
             
             elif ((end - start) > 20) or ((end - start) == 0): # check to make sure times will be within the trial range
                 
-                merit_values = (0.5,0.00) # placeholder value for invalid start/end
-                figures_of_merit.append(merit_values) # update list with placeholders
+                # Update lists with placeholder values for invalid times
+                prediction_quantities = np.zeros(epoch_count)
+                predictors.append(prediction_quantities)
+                
+                merit_values = (0.5,0.00)
+                figures_of_merit.append(merit_values)
+                
+                classifications = (0,0,0,0)
+                confusion_matrix_values.append(classifications)
                 
             elif start >= 20: # check that the start time is before end of trial
-                merit_values = (0.5,0.00) # placeholder value for invalid start/end
-                figures_of_merit.append(merit_values) # update list with placeholders
+                
+                # Update lists with placeholder values for invalid times
+                prediction_quantities = np.zeros(epoch_count)
+                predictors.append(prediction_quantities)
+                
+                merit_values = (0.5,0.00)
+                figures_of_merit.append(merit_values)
+            
+                classifications = (0,0,0,0)
+                confusion_matrix_values.append(classifications)
 
             else: # times are valid
                 
                 # Predictions
-                predicted_labels, truth_labels = generate_predictions(data, channel, epoch_start_time=start, epoch_end_time=end)
+                prediction_quantities, predicted_labels, truth_labels = generate_predictions(data, channel, epoch_start_time=start, epoch_end_time=end)
                 
-                # Accuracy and ITR times
-                accuracy, ITR_time = calculate_figures_of_merit(data, predicted_labels, truth_labels)
+                # Figures of merit
+                accuracy, ITR_time, TP, TN, FP, FN = calculate_figures_of_merit(data, predicted_labels, truth_labels)
                 merit_values = (accuracy, ITR_time) # tuple containing the accuracy and ITR (bits per second)
+                classifications = (TP,TN,FP,FN)
                 
-                # Update list
+                # Update lists
+                predictors.append(prediction_quantities)
                 figures_of_merit.append(merit_values)
+                confusion_matrix_values.append(classifications)
      
-    # Convert to an array
+    # Convert to arrays
+    predictors = np.array(predictors)
     figures_of_merit = np.array(figures_of_merit)
+    confusion_matrix_values = np.array(confusion_matrix_values)
                 
-    return figures_of_merit
+    return predictors, figures_of_merit, confusion_matrix_values
 
 #%% Part D: Plot Results
 
@@ -276,21 +296,7 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
 """
 
 def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, subject):
-    """
-        Definition:
-        ----------
-            
-        
-        Parameters:
-        ----------
-            - data (dict): the raw data dictionary,
-           
-            
-        Returns:
-        ----------
-            None
-    """
-    
+
     # Convert start and end times lists to arrays for plotting
     start_times = np.array(start_times)
     end_times = np.array(end_times) 
@@ -303,7 +309,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     all_ITR_time = []
     
     # Unload data from figures of merit to plot
-    for values in  figures_of_merit:
+    for values in figures_of_merit:
         
         # Get figures of merit from the array
         accuracy = values[0] # first value in tuple is accuracy
@@ -366,51 +372,27 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
 """
 
     TODO:
-        - do we want to plot over a span of epochs?
-        - may run into issue with the predicted_labels if the epoch is invalid
-            - handled for accuracy and ITR with placeholders --> can we do the same thing here by setting whatever value will be plotted to None or 0 (i.e. have it not contribute to the density)?
+        - handled for accuracy and ITR with placeholders --> can we do the same thing here by setting whatever value will be plotted to None or 0 (i.e. have it not contribute to the density)?
         - Docstrings
 
 """
 
 def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz', subject=1, threshold=0):
-    """
-        Definition:
-        ----------
-            
-        
-        Parameters:
-        ----------
-            - data (dict): the raw data dictionary,
-           
-            
-        Returns:
-        ----------
-            None
-    """
     
     # Create array of intersection start and end times
     start_times = np.arange(epoch_start_time, epoch_end_time)
     end_times = np.arange(epoch_start_time, epoch_end_time)
     
-    # Create empty lists to store data to be plotted
-    predictions = []
-    truths = []
+    # Get the figures of merit for each epoch
+    figures_of_merit, confusion_matrix_values = figures_of_merit_over_epochs(data, start_times, end_times, channel)
     
-    # Loop through the epochs
-    for start in start_times:
-        
-        for end in end_times:
+    # Plot the data
+    # predictors is the x axis
+    # relative density of confusion_matrix_values comprise y axis
     
-            # Get the predictions for the epoch
-            predicted_labels, truth_labels = generate_predictions(data, channel, start, end)
-            
-            # Update lists
-            predictions.append(predicted_labels)
-            truths.append(truth_labels)
+    # vertical line at threshold
     
-    # Convert lists to arrays
-    predictions = np.array(predictions)
-    truths = np.array(truths)
     
-
+    
+    # Save figure
+    #plt.savefig(f"plots/subject_{subject}_channel_{channel}_prediction_histogram.png")
