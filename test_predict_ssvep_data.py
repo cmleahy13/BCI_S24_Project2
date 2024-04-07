@@ -73,7 +73,7 @@ plot_figures_of_merit(figures_of_merit_s1, start_times=start_times, end_times=en
 #%% Part E: Create a Predictor Histogram
 
 # Plot predictor histogram for epoch range for subject 1, channel Oz
-plot_predictor_histogram(densities_s1, epoch_start_time=0, epoch_end_time=5, channel='Oz', subject=1, threshold=0)
+plot_predictor_histogram(densities_s1, channel='Oz', subject=1, threshold=0)
 
 # Plot predictor histogram for epoch range for subject 1, channel Oz
 #plot_predictor_histogram(data_s2, epoch_start_time=0, epoch_end_time=5, channel='Oz', subject=2, threshold=0)

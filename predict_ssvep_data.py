@@ -369,12 +369,8 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
 
 """
 
-def plot_predictor_histogram(densities, epoch_start_time, epoch_end_time, channel='Oz', subject=1, threshold=0):
-    
-    # Create array of intersection start and end times
-    start_times = np.arange(epoch_start_time, epoch_end_time)
-    end_times = np.arange(epoch_start_time, epoch_end_time)
-        
+def plot_predictor_histogram(densities, channel='Oz', subject=1, threshold=0):
+            
     present, absent = densities
  
     """ Plot Present values """
@@ -417,7 +413,6 @@ def plot_predictor_histogram(densities, epoch_start_time, epoch_end_time, channe
     plt.tight_layout()
     
     # vertical line at threshold
-    threshold = 0.0
     plt.axvline(x=threshold, color='red', linestyle='--', linewidth=2, label='Threshold')
    
     # Save figure
