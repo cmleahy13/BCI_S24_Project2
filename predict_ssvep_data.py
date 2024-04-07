@@ -25,6 +25,7 @@ Useful abbreviations:
 import numpy as np
 import warnings
 from matplotlib import pyplot as plt
+from scipy.stats import gaussian_kde
 from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
 
 #%% Part A: Generate Predictions
@@ -146,7 +147,7 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
 
 """
 
-def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_count=2):
+def calculate_figures_of_merit(data, predicted_labels, truth_labels, prediction_quantities, classes_count=2):
     
     # Get timing parameters
     trials_per_second = data['fs'] # sampling frequency
@@ -157,6 +158,9 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
     TN = 0 # true negative initial count
     FP = 0 # false positive initial count
     FN = 0 # false negative initial count
+    
+    absent = []
+    present = []
     
     # Carry through errors
     if predicted_labels is None:
@@ -172,12 +176,16 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
             
             if (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==True):
                 TP += 1 # add to true positive count
+                present.append(prediction_quantities[epoch_index])
             elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==False):
                 TN += 1 # add to true negative count
+                absent.append(prediction_quantities[epoch_index])
             elif (predicted_labels[epoch_index]==True) & (truth_labels[epoch_index]==False):
                 FP += 1 # add to false positive count
+                absent.append(prediction_quantities[epoch_index])
             elif (predicted_labels[epoch_index]==False) & (truth_labels[epoch_index]==True):
                 FN += 1 # add to false negative count
+                present.append(prediction_quantities[epoch_index])
         
         # Calculate accuracy
         accuracy = (TP+TN)/epoch_count
@@ -194,7 +202,7 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
         
         ITR_time = ITR_trial * trials_per_second # bits/second
     
-    return accuracy, ITR_time, TP, TN, FP, FN
+    return accuracy, ITR_time, present, absent 
 
 #%% Part C: Loop Through Epoch Limits
 
@@ -213,13 +221,12 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
 
 def figures_of_merit_over_epochs(data, start_times, end_times, channel):
     
-    # Epoch count to define size of placeholder predictor data for invalid cases
-    epoch_count = len(data['event_types'])
-    
     # Declare list to store predictions and figures of merit for each epoch
-    predictors = []
     figures_of_merit = []
-    confusion_matrix_values = []
+
+    # Plotting histogram values
+    present_den =[]
+    absent_den = []
     
     # Perform calculations for each set of valid pairs
     for start in start_times:
@@ -230,38 +237,21 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
             if end < start: # check to make sure valid start and end time
                
                 # Update lists with placeholder values for invalid times
-                prediction_quantities = np.zeros(epoch_count)
-                predictors.append(prediction_quantities)
-                
                 merit_values = (0.5,0.00)
                 figures_of_merit.append(merit_values)
-                
-                classifications = (0,0,0,0) 
-                confusion_matrix_values.append(classifications)
             
             elif ((end - start) > 20) or ((end - start) == 0): # check to make sure times will be within the trial range
                 
                 # Update lists with placeholder values for invalid times
-                prediction_quantities = np.zeros(epoch_count)
-                predictors.append(prediction_quantities)
                 
                 merit_values = (0.5,0.00)
                 figures_of_merit.append(merit_values)
-                
-                classifications = (0,0,0,0)
-                confusion_matrix_values.append(classifications)
                 
             elif start >= 20: # check that the start time is before end of trial
                 
                 # Update lists with placeholder values for invalid times
-                prediction_quantities = np.zeros(epoch_count)
-                predictors.append(prediction_quantities)
-                
                 merit_values = (0.5,0.00)
                 figures_of_merit.append(merit_values)
-            
-                classifications = (0,0,0,0)
-                confusion_matrix_values.append(classifications)
 
             else: # times are valid
                 
@@ -269,21 +259,22 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
                 prediction_quantities, predicted_labels, truth_labels = generate_predictions(data, channel, epoch_start_time=start, epoch_end_time=end)
                 
                 # Figures of merit
-                accuracy, ITR_time, TP, TN, FP, FN = calculate_figures_of_merit(data, predicted_labels, truth_labels)
+                accuracy, ITR_time, present, absent = calculate_figures_of_merit(data, predicted_labels, truth_labels, prediction_quantities)
                 merit_values = (accuracy, ITR_time) # tuple containing the accuracy and ITR (bits per second)
-                classifications = (TP,TN,FP,FN)
                 
                 # Update lists
-                predictors.append(prediction_quantities)
                 figures_of_merit.append(merit_values)
-                confusion_matrix_values.append(classifications)
-     
-    # Convert to arrays
-    predictors = np.array(predictors)
-    figures_of_merit = np.array(figures_of_merit)
-    confusion_matrix_values = np.array(confusion_matrix_values)
+        
+                present_den += present
+                absent_den += absent
                 
-    return predictors, figures_of_merit, confusion_matrix_values
+    densities = (present_den, absent_den)
+                
+    # Convert to arrays
+    figures_of_merit = np.array(figures_of_merit)
+    densities = (present_den, absent_den)
+                
+    return figures_of_merit, densities
 
 #%% Part D: Plot Results
 
@@ -366,6 +357,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     
     # Save figure
     plt.savefig(f"plots/subject_{subject}_channel_{channel}_figures_of_merit.png")
+    plt.close()
 
 #%% Part E: Create a Predictor Histogram
 
@@ -377,22 +369,56 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
 
 """
 
-def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz', subject=1, threshold=0):
+def plot_predictor_histogram(densities, epoch_start_time, epoch_end_time, channel='Oz', subject=1, threshold=0):
     
     # Create array of intersection start and end times
     start_times = np.arange(epoch_start_time, epoch_end_time)
     end_times = np.arange(epoch_start_time, epoch_end_time)
-    
-    # Get the figures of merit for each epoch
-    predictors, figures_of_merit, confusion_matrix_values = figures_of_merit_over_epochs(data, start_times, end_times, channel)
-    
-    # Plot the data
-    # predictors is the x axis
-    # relative density of confusion_matrix_values comprise y axis
+        
+    present, absent = densities
+ 
+    """ Plot Present values """
+    # Calculate mean and standard deviation
+    mean = np.mean(present)
+    std_dev = np.std(present)
+
+    # Create bell curve data
+    x = np.linspace(mean - 3*std_dev, mean + 3*std_dev, 100)
+
+    # Calculate kernel density estimate
+    kde = gaussian_kde(present)
+    density = kde(x)
+
+    # Plot smooth curve and bell curve
+    plt.plot(x, density, color='b', label='Smooth curve')  # Plot smooth curve
+    plt.fill_between(x, density, color='skyblue', alpha=0.5)
+
+    """ Plot Absent values """
+    # Calculate mean and standard deviation
+    mean_abs = np.mean(absent)
+    std_dev_abs = np.std(absent)
+
+    # Create bell curve data
+    x_abs = np.linspace(mean_abs - 3*std_dev_abs, mean_abs + 3*std_dev_abs, 100)
+
+    # Calculate kernel density estimate
+    kde = gaussian_kde(absent)
+    density_abs = kde(x_abs)
+
+    # Plot smooth curve and bell curve
+    plt.plot(x_abs, density_abs, color='r', label='Smooth curve')  # Plot smooth curve
+    plt.fill_between(x_abs, density_abs, color='red', alpha=0.5)
+
+    plt.title('Relative Densities of Confusion Matrix Values for Predictors')
+    plt.xlabel('Predictors')
+    plt.ylabel('Relative Density')
+    plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+    plt.grid(True)
+    plt.tight_layout()
     
     # vertical line at threshold
-    
-    
-    
+    threshold = 0.0
+    plt.axvline(x=threshold, color='red', linestyle='--', linewidth=2, label='Threshold')
+   
     # Save figure
-    #plt.savefig(f"plots/subject_{subject}_channel_{channel}_prediction_histogram.png")
+    plt.savefig(f"plots/subject_{subject}_channel_{channel}_prediction_histogram.png")
