@@ -304,7 +304,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     figure.tight_layout()
     
     # Save figure
-    plt.savefig(f"subject_{subject}_channel_{channel}_figures_of_merit.png")
+    plt.savefig(f"plots/subject_{subject}_channel_{channel}_figures_of_merit.png")
 
 #%% Part E: Create a Predictor Histogram
 
