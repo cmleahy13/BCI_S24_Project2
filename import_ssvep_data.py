@@ -173,7 +173,7 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     ***UPDATES (1)***
     Optional input of eeg_data added (default is None). EEG data has been converted to microvolts where applicable. epoch_times has been corrected (no longer uses linspace).
     ***UPDATES (2)***
-    Optional input of stimulus_frequency added (default is '15Hz'). This will take away the hard-coded comparison for stimuli frequencies. Completely changed to avoid issues about timing when the start and end pairs are invalid.
+    Optional input of stimulus_frequency added (default is '15Hz'). This will take away the hard-coded comparison for stimuli frequencies. Completely changed function to avoid issues about timing when the start and end pairs are invalid. The primary assumptions are that the start time will fall within the 20s event, the epoch must be between 0 (exclusive) and 20 seconds, the start time must be before the end time, and if the given times were to extend beyond the event, the epoch stops at the end of the event (this final assumption produces a shorter epoch than entered).
 
     Parameters
     ----------

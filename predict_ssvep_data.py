@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Mar 28 19:35:53 2024
+predict_ssvep_data.py
+
+This script serves as the primary module script for Project 2: SSVEP. In this script, the functions collectively serve to generate predictions for the stimulus frequency given EEG data and subsequently plot these predictions and the associated figures of merit. The generate_predictions() function produces these frequencies given a dictionary of EEG data and associated information about the trials, such as the event stimuli. The produced prediction and truth arrays are evaluated in calculate_figures_of_merit(), where accuracy and the information transfer rate (ITR) in bits per second are calculated. Those same figures of merit are calculated in figures_of_merit_over_epochs(), though this function calculates these values in a loop as multiple epoch lengths (different start and end times) are provided. The figures of merit are then plotted in a pseudocolor plot against the various epoch start and end times. Finally, a predictor histogram is generated using the prediction and truth labels over the different epoch start and end times.
 
 Useful abbreviations:
     EEG: electroencephalography
@@ -16,11 +18,12 @@ Useful abbreviations:
     FN: False negative - predicted False, truth True
     ITR: Information transfer rate
 
-@author: Claire Leahy and Lute Lillo
+@authors: Claire Leahy and Lute Lillo
 """
 
 # import packages
 import numpy as np
+import warnings
 from matplotlib import pyplot as plt
 from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
 
@@ -31,9 +34,11 @@ from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
     TODO:
         - frequency dynamic coding
             - find frequencies if not explicitly given (i.e. no event_types) -- this is choosing the closest frequencies if none given
+            - assumed that we're taking in a dictionary that contains this field?
             - take two highest-power frequencies (and/or their harmonics with the exception of the powerline artifact)?
         - ignore when an index of power=0
             - gives runtime error but maintains functionality (proceeds to run after error)
+            - temporarily using warnings.filterwarnings("ignore", category=RuntimeWarning) to avoid print to console --> likely want to figure out better solution to handle this case
         - Docstrings
 
 """
@@ -71,6 +76,9 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
         low_frequency_index = int(((len(fft_frequencies)-1)*2/fs)*low)
         high_frequency_index = int(((len(fft_frequencies)-1)*2/fs)*high)
         
+        # Suppress runtime warning that occurs for divide by zero (consequences accounted for elsewhere)
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        
         # Calculate the power (dB)
         power = (np.abs(eeg_epochs_fft[:,:,:]))**2 # calculate power for each frequency at each electrode
         power_in_dB = 10*np.log10(power) # convert to dB
@@ -103,7 +111,8 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
 """
 
     TODO:
-        - double check that trials_per_second should be fs
+        - need to figure out ITR calculation
+            - should the trials_per_second be related to epoch length?
         - Docstrings
 
 """
@@ -145,11 +154,15 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
         accuracy = (TP+TN)/epoch_count
         
         # Temporarily rename/replace variables for readability in ITR calculation
-        P = 0.99999 if accuracy == 1.0 else accuracy
+        P = accuracy
         N = classes_count
         
         # Calculate ITR
-        ITR_trial = np.log2(N) + P*np.log2(P) + (1-P)*np.log2((1-P)/(N-1)) # bits/epoch
+        if P == 1.0:
+            ITR_trial = 1.0 # ITR_trial will be 1.0 for an accuracy of 1.0 (cannot substitute P=1.0 into the equation because of mathematical error)
+        else:
+            ITR_trial = np.log2(N) + P*np.log2(P) + (1-P)*np.log2((1-P)/(N-1)) # bits/epoch
+        
         ITR_time = ITR_trial * trials_per_second # bits/second
     
     return accuracy, ITR_time
@@ -162,10 +175,9 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, classes_cou
         - get a runtime error related to the call of generate_predictions
             - power conversion to dB is a divide by zero error
             - code continues to run through, likely accounted for elsewhere but not immediately upon occurrence
+            - suppressed warning in generate_predictions()
         - at least for channel Oz, there is one epoch (2s, 3s) that is worse that accuracy=0.5 (0.45, worse than guessing)
             - when accuracy is this low, should it be replaced with 0.5 as the minimum placeholder value since this is used for the trials that are not valid?
-        - check ITR calculation - not sure it should be so high when accuracy-->1
-            - check graph in lab guide
         - Docstrings
 
 """
