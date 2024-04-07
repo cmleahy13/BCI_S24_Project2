@@ -74,7 +74,7 @@ def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=
     predicted_labels = np.empty(truth_labels.shape, dtype=bool)
     
     # Set threshold for comparison
-    threshold = 0
+    threshold = 0.5
     
     # Create and compare predictions
     for epoch_index in range(power_in_dB.shape[0]):
@@ -223,7 +223,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     
     # Reshape arrays to match grid shape
     all_accuracies = all_accuracies.reshape(end_times_count, start_times_count)
-    all_ITR_time =all_ITR_time.reshape(end_times_count, start_times_count)
+    all_ITR_time = all_ITR_time.reshape(end_times_count, start_times_count)
     
     # Plot the figures of merit over epoch lengths
     figure_of_merit_plot[0].pcolor(end_times_grid, start_times_grid, all_accuracies, cmap='viridis')
@@ -250,7 +250,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     figure.suptitle(f'SSVEP Subject {subject}, Channel {channel}')
     figure.tight_layout()
     
-    plt.savefig(f"subject_{subject}_channel_{channel}_figures_of_merit.png")
+    plt.savefig(f"plots/subject_{subject}_channel_{channel}_figures_of_merit.png")
 
 #%% Part E: Create a Predictor Histogram
 
@@ -261,3 +261,5 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel, sub
     - Use to place threshold
 
 """
+def create_predictor_histogram(start_time, end_time):
+    pass
