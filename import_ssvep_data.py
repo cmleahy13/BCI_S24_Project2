@@ -173,7 +173,7 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     ***UPDATES (1)***
     Optional input of eeg_data added (default is None). EEG data has been converted to microvolts where applicable. epoch_times has been corrected (no longer uses linspace).
     ***UPDATES (2)***
-    Optional input of stimulus_frequency added (default is '15Hz'). This will take away the hard-coded comparison for stimuli frequencies. Also further updated eeg_epochs to change size and ensure it was based on event_durations and not the start or end times given as inputs.
+    Optional input of stimulus_frequency added (default is '15Hz'). This will take away the hard-coded comparison for stimuli frequencies. Completely changed function to avoid issues about timing when the start and end pairs are invalid. The primary assumptions are that the start time will fall within the 20s event, the epoch must be between 0 (exclusive) and 20 seconds, the start time must be before the end time, and if the given times were to extend beyond the event, the epoch stops at the end of the event (this final assumption produces a shorter epoch than entered).
 
     Parameters
     ----------
@@ -199,32 +199,59 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
     is_trial_15Hz : array of boolean, size Ex1, where E is the number of epochs (or events)
         Array containing True if the epoch is an event at 15Hz, False if the epoch is an event at 12Hz.
 
-    """
-  
-    # extract data
+"""
+
+    # Extract data
     if eeg_data is None:
         eeg_data = (data_dict['eeg'])*(10**6) # defaulting with dictionary extraction, converted to µV    
     channels = list(data_dict['channels']) # convert to list
     fs = data_dict['fs']
-    event_durations = data_dict['event_durations'].astype(int) # cast to contain int instead of float
     event_samples = data_dict['event_samples']
     event_types = data_dict['event_types']
     
-    # preallocate array to contain epochs
-    eeg_epochs = np.zeros([len(event_samples),len(channels), int(len(event_durations)*fs)])
+    # Epoch the data
+    if epoch_end_time < epoch_start_time: # check for valid start and end time
+       
+        print(f'Start {epoch_start_time}s and end {epoch_end_time}s not a valid combination.')
+        eeg_epochs = None
     
-    # load data into array by epoch
-    # code adapted from ChatGPT based on our original code (efficiency)
-    for epoch, start_index in enumerate(event_samples): # epoch number is 1st value, content of event_samples at epoch number (i.e. the starting index) is 2nd
+    elif ((epoch_end_time - epoch_start_time) > 20) or ((epoch_end_time - epoch_start_time) == 0): # check that times will be within the trial range
+        
+        print('Trial length must be between 0 (exclusive) and 20 (inclusive) seconds.')
+        eeg_epochs = None
     
-        end_index = start_index + event_durations[epoch] # find the final sample index for an epoch
+    elif epoch_start_time >= 20: # check that the start time is before end of trial
         
-        eeg_epochs[epoch] = eeg_data[:,start_index:end_index] # for the epoch, add EEG data from all channels (:) for every sample between the start and end indices (start_index:end_index)
+        print('Start time must be before 20s.')
+        eeg_epochs = None
         
-    # create array containing the times for each sample in the epoch
+    else: # times are valid
+        
+        # Calculate the amount of time per each epoch
+        time_per_epoch = epoch_end_time - epoch_start_time
+        
+        # Preallocate array to contain epoched data
+        eeg_epochs = np.zeros([len(event_samples),len(channels), int(time_per_epoch*fs)]) # always contains 20 epochs (20 trials)
+        
+        # Fill in the epoch data
+        for epoch_index in range(len(event_types)):
+            
+            # Get the sample number of the time indices
+            start_time = event_samples[epoch_index] + int(epoch_start_time*fs) # find the sample number of the start time
+            end_time = start_time + int(time_per_epoch*fs) # find the sample number of the end time
+            
+            # Check if end time is outside of epoch
+            if end_time >> (event_samples[epoch_index] + int(20*fs)):
+                
+                event_samples[epoch_index] + int(20*fs) # if outside, replace with final value of epoch
+            
+            # Add EEG data to epoch
+            eeg_epochs[epoch_index] = eeg_data[:, start_time:end_time] # for each channel over range of sample times
+
+    # Generate the array of epoch times
     epoch_times = np.arange(epoch_start_time, epoch_end_time, 1/fs)
-    
-    # create boolean array containing True if the event is a 15Hz sample, False if 12Hz
+
+    # Generate the array of truth values
     is_trial_15Hz = np.array([True if event == stimulus_frequency else False for event in event_types])
     
     return eeg_epochs, epoch_times, is_trial_15Hz
