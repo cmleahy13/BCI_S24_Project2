@@ -261,7 +261,7 @@ def figures_of_merit_over_epochs(data, start_times=np.arange(0,20), end_times=np
     figures_of_merit : array of float, size TxF where T is the product of the number of start times and number of end times and F is the number of figures of merit being produced (2)
         Array containing the figures of merit, in this case accuracy and ITR (bits/second).
     epoched_predictors : tuple, size 2
-        Tuple containing the predictors for each epoch span, containing the predictors (power difference) organized by presence of the signal..
+        Tuple containing the predictors for each epoch span, containing the predictors (power difference) organized by presence of the signal.
 
     """
     
