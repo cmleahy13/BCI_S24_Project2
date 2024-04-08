@@ -325,6 +325,8 @@ def figures_of_merit_over_epochs(data, start_times=np.arange(0,20), end_times=np
 
     TODO:
         - problem when start_times and end_times aren't equal
+        - change axes when start >= 20
+            - currently from 0 to max, want from min to max (get rid of whitespace in plot)
         - ytick labels won't show for ITR plot?
         - change scale of colorbar
 
@@ -442,6 +444,12 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz'
     plt.savefig(f"plots/subject_{subject}_channel_{channel}_figures_of_merit.png")
 
 #%% Part E: Create a Predictor Histogram
+
+"""
+    TODO:
+        - could add legend label for overlap (FP/FN)?
+
+"""
 
 def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz', subject=1, threshold=0):
     """

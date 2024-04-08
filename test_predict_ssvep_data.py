@@ -67,7 +67,10 @@ figures_of_merit_s1, epoched_predictors_s1 = figures_of_merit_over_epochs(data=d
 #%% Part D: Plot Results
 
 # Initialize a directory to store plots
-os.mkdir('plots/')
+if os.path.exists('plots/'): # check if directory exists
+    None
+else:
+    os.mkdir('plots/')
 
 # Plot figures of merit for various epochs for subject 1, channel Oz
 plot_figures_of_merit(figures_of_merit_s1, start_times=start_times, end_times=end_times, channel='Oz', subject=1)
