@@ -507,7 +507,7 @@ def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz
     plt.axvline(x=threshold, color='black', linestyle='--', linewidth=2, label='Threshold')
 
     # Format figure
-    plt.title('Relative Densities of Confusion Matrix Values for Predictors')
+    plt.title('Relative Densities of Confusion Matrix Values for Predictors Subject {subject}, Channel {channel}')
     plt.xlabel('Predictors')
     plt.ylabel('Relative Density')
     plt.xticks(rotation=45) # rotate x-axis labels for better readability
