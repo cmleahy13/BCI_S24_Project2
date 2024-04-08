@@ -336,7 +336,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz'
 
     # Convert start and end times lists to arrays for plotting
     start_times = np.array(start_times)
-    end_times = np.array(end_times) 
+    end_times = np.array(end_times)
     
     # Counts of start/end times to reshape grids
     # start_times, end_times = valid_range_times(start_times, end_times)
@@ -361,8 +361,12 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz'
     # Initialize figure
     figure, figure_of_merit_plot = plt.subplots(1, 2, figsize=(15, 8), sharex=True, sharey=True)
     
-    # Update start and end times as grid
-    end_times_grid, start_times_grid = np.meshgrid(end_times, start_times)
+    # Update start and end times as grid  
+    if start_times_count != end_times_count:
+         start_times_grid, end_times_grid, = np.meshgrid(start_times, end_times) # used ChatGPT to help troubleshoot uneven start and end times dimensions mismatch
+    else:
+        end_times_grid, start_times_grid = np.meshgrid(end_times, start_times)
+    #end_times_grid, start_times_grid = np.meshgrid(end_times, start_times)
     
     # Convert lists to arrays
     all_accuracies = np.array(all_accuracies)

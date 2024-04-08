@@ -225,7 +225,7 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
         print('Start time must be before 20s.')
         eeg_epochs = None
         
-    else: # times are valid
+    else:
         
         # Calculate the amount of time per each epoch
         time_per_epoch = epoch_end_time - epoch_start_time
@@ -243,7 +243,7 @@ def epoch_ssvep_data(data_dict, epoch_start_time=0, epoch_end_time=20, eeg_data=
             # Check if end time is outside of epoch
             if end_time >> (event_samples[epoch_index] + int(20*fs)):
                 
-                event_samples[epoch_index] + int(20*fs) # if outside, replace with final value of epoch
+                end_time = event_samples[epoch_index] + int(20*fs) # if outside, replace with final value of epoch
             
             # Add EEG data to epoch
             eeg_epochs[epoch_index] = eeg_data[:, start_time:end_time] # for each channel over range of sample times
@@ -398,36 +398,3 @@ def plot_power_spectrum(eeg_epochs_fft, fft_frequencies, is_trial_15Hz, channels
         plt.savefig(f'SSVEP_S{subject}_frequency_content.png')
         
     return spectrum_db_15Hz, spectrum_db_12Hz 
-
-def valid_range_times(start_times, end_times):
-    """
-        Description
-        -----------
-        Helper function to trim and pad the start and end times to a valid range.
-
-        Parameters
-        -----------
-        start_times (list): list of integers containing start times
-        end_times (list): list of integers containing end times
-    
-        Returns
-        -----------
-        start_times (list): list of integers containing valid start times
-        end_times (list): list of integers containing valid end times
-        
-    """
-    
-    if len(start_times) > len(end_times):
-        for i in range(len(start_times)):
-            if start_times[i] > end_times[0]:
-                start_times[i] = -1
-        start_times = start_times[start_times != -1]
-        end_times =  start_times
-    else:
-        for i in range(len(end_times)):
-            if end_times[i] < start_times[0]:
-                end_times[i] = -1
-        end_times = end_times[end_times != -1]
-    
-
-    return start_times, end_times
