@@ -6,9 +6,9 @@ test_predict_ssvep_data.py
 This script serves as the test script for Project 2: SSVEP. Functions from both import_ssvep_data.py (Lab 3, edited) and predict_ssvep_data.py are called to produce a functional, meaningful script. First, the data are loaded into a dictionary containing features such as EEG voltages and stimulus frequencies. The predictions and figures of merit for a given epoch are then generated initially for one channel and a start/end time pair before being calculated for a variety of possible epochs. Once produced over the different epochs, these data are plotted.
 
 Useful abbreviations:
-    EEG: electroencephalography
-    SSVEP: steady-state visual evoked potentials
-    fs: sampling frequency
+    EEG: Electroencephalography
+    SSVEP: Steady-state visual evoked potentials
+    fs: Sampling frequency
     FFT: Fast Fourier Transform
     FIR: Finite impulse response
     IIR: Infinite impulse response
@@ -17,6 +17,7 @@ Useful abbreviations:
     FP: False positive - predicted True, truth False
     FN: False negative - predicted False, truth True
     ITR: Information transfer rate
+    KDE: Kernel density estimate
 
 @author: Claire Leahy and Lute Lillo
 """
@@ -45,7 +46,7 @@ prediction_quantities_s1, predicted_labels_s1, truth_labels_s1 = generate_predic
 #%% Part B: Calculate Accuracy and ITR
 
 # Calculate figures of merit for subject 1, channel Oz
-accuracy_s1, ITR_time_s1, present, absent = calculate_figures_of_merit(data_s1, predicted_labels_s1, truth_labels_s1, prediction_quantities_s1, classes_count=2)
+accuracy_s1, ITR_time_s1, signal_present_predictors_s1, signal_absent_predictors_s1 = calculate_figures_of_merit(data_s1, predicted_labels_s1, truth_labels_s1, prediction_quantities_s1, classes_count=2)
 
 # Calculate figures of merit for subject 2, channel Oz
 #accuracy_s2, ITR_time_s2 = calculate_figures_of_merit(data_s2, predicted_labels_s2, truth_labels_s2, classes_count=2)
@@ -57,7 +58,7 @@ start_times = np.arange(0,5)
 end_times = np.arange(0,5)
 
 # Calculate figures of merit for various epochs for subject 1, channel Oz
-figures_of_merit_s1, densities_s1 = figures_of_merit_over_epochs(data=data_s1, start_times=start_times, end_times=end_times, channel='Oz')
+figures_of_merit_s1, epoched_predictors_s1 = figures_of_merit_over_epochs(data=data_s1, start_times=start_times, end_times=end_times, channel='Oz')
 
 # Calculate figures of merit for various epochs for subject 2, channel Oz
 #figures_of_merit_s2 = figures_of_merit_over_epochs(data=data_s2, start_times=start_times, end_times=end_times, channel='Oz')
@@ -73,10 +74,34 @@ plot_figures_of_merit(figures_of_merit_s1, start_times=start_times, end_times=en
 #%% Part E: Create a Predictor Histogram
 
 # Plot predictor histogram for epoch range for subject 1, channel Oz
-start_times_hist = np.arange(2,4)
-end_times_hist = np.arange(2,4)
-plot_predictor_histogram(data_s1, start_times_hist, end_times_hist, channel='Oz', subject=1, threshold=0)
+plot_predictor_histogram(data_s1, epoch_start_time=0, epoch_end_time=5, channel='Oz', subject=1, threshold=0)
 
 # Plot predictor histogram for epoch range for subject 1, channel Oz
 #plot_predictor_histogram(data_s2, epoch_start_time=0, epoch_end_time=5, channel='Oz', subject=2, threshold=0)
 
+#%% Part F: Write Up Your Results
+
+# # Run all channels for comparison
+# channels = data_s1['channels'] # full array of channels, same for S1 and S2
+# subjects = [1, 2] # array for both subjects
+
+# # Create arrays for start and end times
+# start_times = np.arange(0,20)
+# end_times = np.arange(0,20)
+
+# for subject in subjects:
+    
+#     # Reload the data for present subject
+#     data = load_ssvep_data(subject=subject, data_directory='SsvepData/')
+    
+#     for channel in channels:
+        
+#         # Figures of merit
+#         figures_of_merit, densities = figures_of_merit_over_epochs(data=data, start_times=start_times, end_times=end_times, channel=channel)
+        
+#         # Plotting figures of merit
+#         plot_figures_of_merit(figures_of_merit, start_times=start_times, end_times=end_times, channel=channel, subject=subject)
+        
+#         # Plotting predictor histogram
+#         plot_predictor_histogram(data, epoch_start_time=2, epoch_end_time=4, channel=channel, subject=subject, threshold=0)
+        
