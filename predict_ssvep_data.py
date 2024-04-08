@@ -20,6 +20,10 @@ Useful abbreviations:
     KDE: Kernel density estimate
 
 @authors: Claire Leahy and Lute Lillo
+
+Soures:
+    - ChatGPT to help with handling non-square dimensions for start and end times for plotting
+    
 """
 
 # import packages
