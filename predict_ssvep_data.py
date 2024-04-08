@@ -398,11 +398,11 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz'
 
     
     # Color bars
-    norm = mpl.colors.Normalize(vmin=all_accuracies.min(), vmax=all_accuracies.max())
-    figure.colorbar(mappable=mpl.cm.ScalarMappable(norm=norm), ax=figure_of_merit_plot[0], label='% Correct')
+    norm_accuracy = mpl.colors.Normalize(vmin=all_accuracies.min()*100, vmax=all_accuracies.max()*100)
+    figure.colorbar(mappable=mpl.cm.ScalarMappable(norm=norm_accuracy), ax=figure_of_merit_plot[0], label='% Correct')
     
-    norm = mpl.colors.Normalize(vmin=all_ITR_time.min(), vmax=all_ITR_time.max())
-    figure.colorbar(mappable=mpl.cm.ScalarMappable(norm=norm), ax=figure_of_merit_plot[1], label='ITR (bits/sec)')
+    norm_ITR = mpl.colors.Normalize(vmin=all_ITR_time.min(), vmax=all_ITR_time.max())
+    figure.colorbar(mappable=mpl.cm.ScalarMappable(norm=norm_ITR), ax=figure_of_merit_plot[1], label='ITR (bits/sec)')
         
     # Format whole figure
     figure.suptitle(f'SSVEP Subject {subject}, Channel {channel}')
