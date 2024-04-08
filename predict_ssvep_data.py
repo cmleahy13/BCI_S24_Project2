@@ -278,24 +278,11 @@ def figures_of_merit_over_epochs(data, start_times=np.arange(0,20), end_times=np
         for end in end_times:
             
             # Update the list containing the figures of merit
-            if end < start: # check to make sure valid start and end time
-               
-                # Update lists with placeholder values for invalid times
-                merit_values = (0.5,0.00)
-                figures_of_merit.append(merit_values)
-            
-            elif ((end - start) > 20) or ((end - start) == 0): # check to make sure times will be within the trial range
-                
-                # Update lists with placeholder values for invalid times
-                
-                merit_values = (0.5,0.00)
-                figures_of_merit.append(merit_values)
-                
-            elif start >= 20: # check that the start time is before end of trial
-                
-                # Update lists with placeholder values for invalid times
-                merit_values = (0.5,0.00)
-                figures_of_merit.append(merit_values)
+            if (end<start) or (start>=20) or ((end - start)>20) or ((end-start)==0): # check to make sure valid start and end time
+              
+               # Update lists with placeholder values for invalid times
+               merit_values = (0.5,0.00)
+               figures_of_merit.append(merit_values)
 
             else: # times are valid
                 
