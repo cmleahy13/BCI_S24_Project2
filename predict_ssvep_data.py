@@ -239,7 +239,7 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, prediction_
 
 """
 
-def figures_of_merit_over_epochs(data, start_times, end_times, channel):
+def figures_of_merit_over_epochs(data, start_times=np.arange(0,20), end_times=np.arange(0,20), channel='Oz'):
     """
     Description
     -----------
@@ -249,12 +249,12 @@ def figures_of_merit_over_epochs(data, start_times, end_times, channel):
     ----------
     data : dict, size F, where F is the number of fields (6)
         Data from Python's MNE SSVEP dataset as a dictionary object, where the fields are relevant features of the data.
-    start_times : array of int, size Tx1 where T is the number of start times to evaluate
-        Range of times to investigate as potential epoch start times.
-    end_times : array of int, size Tx1 where T is the number of end times to evaluate
-        Range of times to investigate as potential epoch end times.
-    channel : str
-        The electrode for which the epochs will be investigated.
+    start_times : array of int, size Tx1 where T is the number of start times to evaluate, optional
+        Range of times to investigate as potential epoch start times. The default is np.arange(0,20).
+    end_times : array of int, size Tx1 where T is the number of end times to evaluate, optional
+        Range of times to investigate as potential epoch end times. The default is np.arange(0,20).
+    channel : str, optional
+        The electrode for which the epochs will be investigated. The default is 'Oz'
 
     Returns
     -------
