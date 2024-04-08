@@ -27,7 +27,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import warnings
 from scipy.stats import gaussian_kde
-from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
+from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, valid_range_times
 
 #%% Part A: Generate Predictions
 
@@ -278,25 +278,12 @@ def figures_of_merit_over_epochs(data, start_times=np.arange(0,20), end_times=np
         for end in end_times:
             
             # Update the list containing the figures of merit
-            if end < start: # check to make sure valid start and end time
+            if (end < start) or ((end - start) > 20) or ((end - start) == 0) or (start >= 20): # check to make sure valid start and end time
                
                 # Update lists with placeholder values for invalid times
                 merit_values = (0.5,0.00)
                 figures_of_merit.append(merit_values)
-            
-            elif ((end - start) > 20) or ((end - start) == 0): # check to make sure times will be within the trial range
                 
-                # Update lists with placeholder values for invalid times
-                
-                merit_values = (0.5,0.00)
-                figures_of_merit.append(merit_values)
-                
-            elif start >= 20: # check that the start time is before end of trial
-                
-                # Update lists with placeholder values for invalid times
-                merit_values = (0.5,0.00)
-                figures_of_merit.append(merit_values)
-
             else: # times are valid
                 
                 # Predictions
@@ -362,6 +349,7 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz'
     end_times = np.array(end_times) 
     
     # Counts of start/end times to reshape grids
+    # start_times, end_times = valid_range_times(start_times, end_times)
     start_times_count = len(start_times)
     end_times_count = len(end_times)
 
@@ -392,7 +380,8 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz'
     
     # Reshape arrays to match grid shape
     all_accuracies = all_accuracies.reshape(end_times_count, start_times_count)
-    all_ITR_time =all_ITR_time.reshape(end_times_count, start_times_count)
+    all_ITR_time = all_ITR_time.reshape(end_times_count, start_times_count)
+    
     
     # Plot the figures of merit over epoch lengths
     figure_of_merit_plot[0].pcolor(end_times_grid, start_times_grid, all_accuracies, cmap='viridis')
@@ -403,30 +392,20 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz'
     figure_of_merit_plot[0].set_title('Accuracy')
     figure_of_merit_plot[1].set_title('Information Transfer Rate')
     
-    # Variables for formatting
-    # Numerical tick marks
-    x_ticks = np.arange(end_times.min(), end_times.max(), 2.5)
-    y_ticks = np.arange(start_times.min(), start_times.max(), 5)
-    # String labels for axis
-    x_labels = [str(time) for time in x_ticks]
-    y_labels = [str(time) for time in y_ticks]
-    
     # Format both plots
     for plot in figure_of_merit_plot:
         
         # Grid
         plot.grid()
+        
         # Limits
-        plot.set_xlim(0, end_times.max())
-        plot.set_ylim(0, start_times.max()) 
+        plot.set_xlim(end_times.min(), end_times.max())
+        plot.set_ylim(start_times.min(), start_times.max()) 
+        
         # Labels
         plot.set_xlabel('Epoch End Time (s)')
         plot.set_ylabel('Epoch Start Time (s)')
-        # Ticks
-        plot.set_xticks(x_ticks)
-        plot.set_yticks(y_ticks)
-        plot.set_xticklabels(x_labels)
-        plot.set_yticklabels(y_labels)
+
     
     # Color bars
     figure.colorbar(mappable=None, ax=figure_of_merit_plot[0], label='% Correct')

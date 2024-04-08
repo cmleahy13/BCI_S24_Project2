@@ -25,7 +25,7 @@ Useful abbreviations:
 # import packages
 import numpy as np
 import os
-from import_ssvep_data import load_ssvep_data
+from import_ssvep_data import load_ssvep_data, valid_range_times
 from predict_ssvep_data import generate_predictions, calculate_figures_of_merit, figures_of_merit_over_epochs, plot_figures_of_merit, plot_predictor_histogram
 
 #%% Load the Data
@@ -56,7 +56,9 @@ accuracy_s1, ITR_time_s1, signal_present_predictors_s1, signal_absent_predictors
 
 # Create arrays for start and end times
 start_times = np.arange(0,5)
-end_times = np.arange(0,5)
+end_times = np.arange(3,5)
+# Check that times are valid
+start_times, end_times = valid_range_times(start_times, end_times)
 
 # Calculate figures of merit for various epochs for subject 1, channel Oz
 figures_of_merit_s1, epoched_predictors_s1 = figures_of_merit_over_epochs(data=data_s1, start_times=start_times, end_times=end_times, channel='Oz')
