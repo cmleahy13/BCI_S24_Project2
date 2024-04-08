@@ -56,7 +56,7 @@ accuracy_s1, ITR_time_s1, signal_present_predictors_s1, signal_absent_predictors
 
 # Create arrays for start and end times
 start_times = np.arange(0,5)
-end_times = np.arange(3,5)
+end_times = np.arange(0,5)
 # Check that times are valid
 start_times, end_times = valid_range_times(start_times, end_times)
 

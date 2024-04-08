@@ -26,8 +26,9 @@ Useful abbreviations:
 import numpy as np
 from matplotlib import pyplot as plt
 import warnings
+import matplotlib as mpl
 from scipy.stats import gaussian_kde
-from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum, valid_range_times
+from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
 
 #%% Part A: Generate Predictions
 
@@ -308,17 +309,6 @@ def figures_of_merit_over_epochs(data, start_times=np.arange(0,20), end_times=np
 
 #%% Part D: Plot Results
 
-"""
-
-    TODO:
-        - problem when start_times and end_times aren't equal
-        - change axes when start >= 20
-            - currently from 0 to max, want from min to max (get rid of whitespace in plot)
-        - ytick labels won't show for ITR plot?
-        - change scale of colorbar
-
-"""
-
 def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz', subject=1):
     """
     Description
@@ -408,12 +398,11 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz'
 
     
     # Color bars
-    figure.colorbar(mappable=None, ax=figure_of_merit_plot[0], label='% Correct')
-    figure.colorbar(mappable=None, ax=figure_of_merit_plot[1], label='ITR (bits/sec)')
-
-    # need to add a scale for color bar
-        # (50, 100) for accuracy
-        # (0, all_ITR_time.max()) for ITR
+    norm = mpl.colors.Normalize(vmin=all_accuracies.min(), vmax=all_accuracies.max())
+    figure.colorbar(mappable=mpl.cm.ScalarMappable(norm=norm), ax=figure_of_merit_plot[0], label='% Correct')
+    
+    norm = mpl.colors.Normalize(vmin=all_ITR_time.min(), vmax=all_ITR_time.max())
+    figure.colorbar(mappable=mpl.cm.ScalarMappable(norm=norm), ax=figure_of_merit_plot[1], label='ITR (bits/sec)')
         
     # Format whole figure
     figure.suptitle(f'SSVEP Subject {subject}, Channel {channel}')
@@ -423,12 +412,6 @@ def plot_figures_of_merit(figures_of_merit, start_times, end_times, channel='Oz'
     plt.savefig(f"plots/subject_{subject}_channel_{channel}_figures_of_merit.png")
 
 #%% Part E: Create a Predictor Histogram
-
-"""
-    TODO:
-        - could add legend label for overlap (FP/FN)?
-
-"""
 
 def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz', subject=1, threshold=0):
     """
@@ -499,7 +482,7 @@ def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz
     plt.axvline(x=threshold, color='black', linestyle='--', linewidth=2, label='Threshold')
 
     # Format figure
-    plt.title('Relative Densities of Confusion Matrix Values for Predictors Subject {subject}, Channel {channel}')
+    plt.title(f'Relative Densities of Confusion Matrix Values for Predictors Subject {subject}, Channel {channel}')
     plt.xlabel('Predictors')
     plt.ylabel('Relative Density')
     plt.xticks(rotation=45) # rotate x-axis labels for better readability
