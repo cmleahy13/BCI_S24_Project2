@@ -24,6 +24,7 @@ Useful abbreviations:
 
 # import packages
 import numpy as np
+import os
 from import_ssvep_data import load_ssvep_data
 from predict_ssvep_data import generate_predictions, calculate_figures_of_merit, figures_of_merit_over_epochs, plot_figures_of_merit, plot_predictor_histogram
 
@@ -64,6 +65,9 @@ figures_of_merit_s1, epoched_predictors_s1 = figures_of_merit_over_epochs(data=d
 #figures_of_merit_s2 = figures_of_merit_over_epochs(data=data_s2, start_times=start_times, end_times=end_times, channel='Oz')
 
 #%% Part D: Plot Results
+
+# Initialize a directory to store plots
+os.mkdir('plots/')
 
 # Plot figures of merit for various epochs for subject 1, channel Oz
 plot_figures_of_merit(figures_of_merit_s1, start_times=start_times, end_times=end_times, channel='Oz', subject=1)
