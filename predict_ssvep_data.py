@@ -467,10 +467,10 @@ def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz
     plt.fill_between(x_absent, density_absent, color='red', alpha=0.5, label='absent')
     
     # Vertical line at threshold
-    plt.axvline(x=threshold, color='black', linestyle='--', linewidth=2, label='Threshold')
+    plt.axvline(x=threshold, color='black', linestyle='--', linewidth=2, label='threshold')
 
     # Format figure
-    plt.title(f'Prediction Histogram for Subject {subject}, Channel {channel}')
+    plt.title(f'Prediction Histogram for Subject {subject}, Channel {channel}, {epoch_start_time}s-{epoch_end_time}s')
     plt.xlabel('Predictors')
     plt.ylabel('Relative Density')
     plt.xticks(rotation=45) # rotate x-axis labels for better readability
