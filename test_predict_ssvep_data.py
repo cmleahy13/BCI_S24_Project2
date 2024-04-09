@@ -34,7 +34,7 @@ from predict_ssvep_data import generate_predictions, calculate_figures_of_merit,
 data_s1 = load_ssvep_data(subject=1, data_directory='SsvepData/')
 
 # Load the SSVEP data for subject 2
-#data_s2 = load_ssvep_data(subject=2, data_directory='SsvepData/')
+data_s2 = load_ssvep_data(subject=2, data_directory='SsvepData/')
 
 #%% Part A: Generate Predictions
 
@@ -42,27 +42,27 @@ data_s1 = load_ssvep_data(subject=1, data_directory='SsvepData/')
 prediction_quantities_s1, predicted_labels_s1, truth_labels_s1 = generate_predictions(data=data_s1, channel='Oz', epoch_start_time=0, epoch_end_time=20)
 
 # Generate predictions for subject 2, channel Oz
-#prediction_quantities_s2, predicted_labels_s2, truth_labels_s2 = generate_predictions(data=data_s2, channel='Oz', epoch_start_time=0, epoch_end_time=10)
+prediction_quantities_s2, predicted_labels_s2, truth_labels_s2 = generate_predictions(data=data_s2, channel='Oz', epoch_start_time=0, epoch_end_time=10)
 
 #%% Part B: Calculate Accuracy and ITR
 
 # Calculate figures of merit for subject 1, channel Oz
-accuracy_s1, ITR_time_s1, signal_present_predictors_s1, signal_absent_predictors_s1 = calculate_figures_of_merit(data_s1, predicted_labels_s1, truth_labels_s1, prediction_quantities_s1, classes_count=2)
+accuracy_s1, ITR_time_s1, signal_present_predictors_s1, signal_absent_predictors_s1 = calculate_figures_of_merit(data=data_s1, predicted_labels=predicted_labels_s1, truth_labels=truth_labels_s1, prediction_quantities=prediction_quantities_s1, classes_count=2)
 
 # Calculate figures of merit for subject 2, channel Oz
-#accuracy_s2, ITR_time_s2 = calculate_figures_of_merit(data_s2, predicted_labels_s2, truth_labels_s2, classes_count=2)
+accuracy_s2, ITR_time_s2, signal_present_predictors_s2, signal_absent_predictors_s2 = calculate_figures_of_merit(data=data_s2, predicted_labels=predicted_labels_s2, truth_labels=truth_labels_s2, prediction_quantities=prediction_quantities_s2, classes_count=2)
 
 #%% Part C: Loop Through Epoch Limits
 
 # Create arrays for start and end times
-start_times = np.arange(0,5)
-end_times = np.arange(0,5)
+start_times = np.arange(0,20)
+end_times = np.arange(0,20)
 
 # Calculate figures of merit for various epochs for subject 1, channel Oz
 figures_of_merit_s1, epoched_predictors_s1 = figures_of_merit_over_epochs(data=data_s1, start_times=start_times, end_times=end_times, channel='Oz')
 
 # Calculate figures of merit for various epochs for subject 2, channel Oz
-#figures_of_merit_s2 = figures_of_merit_over_epochs(data=data_s2, start_times=start_times, end_times=end_times, channel='Oz')
+figures_of_merit_s2, epoched_predictors_s2 = figures_of_merit_over_epochs(data=data_s2, start_times=start_times, end_times=end_times, channel='Oz')
 
 #%% Part D: Plot Results
 
@@ -76,31 +76,33 @@ else:
 plot_figures_of_merit(figures_of_merit_s1, start_times=start_times, end_times=end_times, channel='Oz', subject=1)
 
 # Plot figures of merit for various epochs for subject 2, channel Oz
-#plot_figures_of_merit(figures_of_merit_s2, start_times=start_times, end_times=end_times, channel='Oz', subject=2)
+plot_figures_of_merit(figures_of_merit_s2, start_times=start_times, end_times=end_times, channel='Oz', subject=2)
 
 #%% Part E: Create a Predictor Histogram
 
 # Plot predictor histogram for epoch range for subject 1, channel Oz
-plot_predictor_histogram(data_s1, epoch_start_time=0, epoch_end_time=5, channel='Oz', subject=1, threshold=0)
+plot_predictor_histogram(data_s1, epoch_start_time=5, epoch_end_time=11, channel='Oz', subject=1, threshold=0)
 
-# Plot predictor histogram for epoch range for subject 1, channel Oz
-#plot_predictor_histogram(data_s2, epoch_start_time=0, epoch_end_time=5, channel='Oz', subject=2, threshold=0)
+# Plot predictor histogram for epoch range for subject 2, channel Oz
+plot_predictor_histogram(data_s2, epoch_start_time=5, epoch_end_time=11, channel='Oz', subject=2, threshold=0)
 
 #%% Part F: Write Up Your Results
 
-# # Run all channels for comparison
-# channels = data_s1['channels'] # full array of channels, same for S1 and S2
-# subjects = [1, 2] # array for both subjects
+# # Create array for subjects
+# subjects = [1, 2]
 
 # # Create arrays for start and end times
 # start_times = np.arange(0,20)
 # end_times = np.arange(0,20)
 
+# # Run for both subjects
 # for subject in subjects:
     
-#     # Reload the data for present subject
+#     # Reload the data for present subject (lets cell run independently other than imports)
 #     data = load_ssvep_data(subject=subject, data_directory='SsvepData/')
+#     channels = data['channels'] # full array of channels for the subject
     
+#     # Run for every channel
 #     for channel in channels:
         
 #         # Figures of merit
@@ -108,7 +110,4 @@ plot_predictor_histogram(data_s1, epoch_start_time=0, epoch_end_time=5, channel=
         
 #         # Plotting figures of merit
 #         plot_figures_of_merit(figures_of_merit, start_times=start_times, end_times=end_times, channel=channel, subject=subject)
-        
-#         # Plotting predictor histogram
-#         plot_predictor_histogram(data, epoch_start_time=2, epoch_end_time=4, channel=channel, subject=subject, threshold=0)
         

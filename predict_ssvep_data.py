@@ -36,19 +36,6 @@ from import_ssvep_data import epoch_ssvep_data, get_frequency_spectrum
 
 #%% Part A: Generate Predictions
 
-"""
-
-    TODO:
-        - frequency dynamic coding
-            - find frequencies if not explicitly given (i.e. no event_types) -- this is choosing the closest frequencies if none given
-            - assumed that we're taking in a dictionary that contains this field?
-            - take two highest-power frequencies (and/or their harmonics with the exception of the powerline artifact)?
-        - ignore when an index of power=0
-            - gives runtime error but maintains functionality (proceeds to run after error)
-            - using warnings.filterwarnings("ignore", category=RuntimeWarning) to avoid print to console --> likely want to figure out better solution to handle this case
-
-"""
-
 def generate_predictions(data, channel='Oz', epoch_start_time=0, epoch_end_time=20):
     """
     Description
@@ -236,13 +223,6 @@ def calculate_figures_of_merit(data, predicted_labels, truth_labels, prediction_
     return accuracy, ITR_time, signal_present_predictors, signal_absent_predictors 
 
 #%% Part C: Loop Through Epoch Limits
-
-"""
-
-    TODO:
-        - check updating the predictors --> potentially should plot no intersection for part E?
-
-"""
 
 def figures_of_merit_over_epochs(data, start_times=np.arange(0,20), end_times=np.arange(0,20), channel='Oz'):
     """
@@ -490,12 +470,12 @@ def plot_predictor_histogram(data, epoch_start_time, epoch_end_time, channel='Oz
     plt.axvline(x=threshold, color='black', linestyle='--', linewidth=2, label='Threshold')
 
     # Format figure
-    plt.title(f'Relative Densities of Confusion Matrix Values for Predictors Subject {subject}, Channel {channel}')
+    plt.title(f'Prediction Histogram for Subject {subject}, Channel {channel}')
     plt.xlabel('Predictors')
     plt.ylabel('Relative Density')
     plt.xticks(rotation=45) # rotate x-axis labels for better readability
     plt.legend()
-    plt.grid(True)
+    plt.grid()
     plt.tight_layout()
    
     # Save figure
